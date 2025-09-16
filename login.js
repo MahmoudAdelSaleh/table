@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password').value;
 
         // --- قم بتغيير اسم المستخدم وكلمة المرور هنا ---
-        const correctUsername = "admin";
-        const correctPassword = "password123";
+        const correctUsername = "mahmoudadelsaleh@gmail.com";
+        const correctPassword = "Almas&Ahmed";
         // ---------------------------------------------
 
         if (username === correctUsername && password === correctPassword) {
