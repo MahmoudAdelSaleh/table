@@ -1,5 +1,5 @@
 // ملف: firebase-config.js
-
+// !!! استبدل هذا الكود بالبيانات الخاصة بك من مشروع Firebase !!!
 const firebaseConfig = {
   apiKey: "AIzaSyCcEY4xNGP0LNaUTsSIEL9bALstG1736Xc",
   authDomain: "table-bff6c.firebaseapp.com",
