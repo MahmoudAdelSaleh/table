@@ -2,296 +2,105 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>مصمم الجداول المدرسية المتكامل</title>
-    <!-- رابط ملف التنسيقات CSS -->
+    <title>تسجيل الدخول - مصمم الجداول المدرسية</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- مكتبات خارجية -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .auth-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        .auth-container h1 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .auth-container .form-group {
+            margin-bottom: 15px;
+        }
+        .auth-container .form-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        .auth-container .btn-primary {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .toggle-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .toggle-link a {
+            color: var(--primary-color);
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .toggle-link a:hover {
+            text-decoration: underline;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <h1>مصمم الجداول المدرسية المتكامل</h1>
-
-        <div class="management-buttons">
-            <button onclick="openModal('settings-modal')">إعدادات الجدول</button>
-            <button onclick="openModal('display-settings-modal')">إعدادات العرض</button>
-            <button onclick="openModal('classes-modal')">إدارة الفصول</button>
-            <button onclick="openModal('subjects-modal')">إدارة المواد</button>
-            <button onclick="openModal('teachers-modal')">إدارة المعلمين</button>
-            <button onclick="openModal('assignments-modal')">إدارة الأنصبة</button>
-            <button onclick="handleRandomDistribution()" style="background-color: var(--info-color);">توزيع عشوائي</button>
-            <button onclick="clearSchedule()" style="background-color: var(--warning-color);">مسح الجدول</button>
-            <button onclick="saveBackup()" style="background-color: var(--success-color);">حفظ نسخة احتياطية</button>
-            <button onclick="restoreBackup()" style="background-color: var(--purple-color);">استعادة نسخة</button>
+    <div class="auth-container">
+        <div id="login-form">
+            <h1>تسجيل الدخول</h1>
+            <div class="form-group">
+                <input type="email" id="login-email" placeholder="البريد الإلكتروني" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="login-password" placeholder="كلمة المرور" required>
+            </div>
+            <button class="btn-primary" onclick="loginUser()">دخول</button>
+            <p class="toggle-link"><a onclick="toggleForms()">ليس لديك حساب؟ سجل الآن</a></p>
+            <p class="toggle-link"><a onclick="sendPasswordReset()">نسيت كلمة المرور؟</a></p>
         </div>
 
-        <div class="controls">
-            <label for="exportType">عرض/تصدير/طباعة:</label>
-            <select id="exportType">
-                <option value="school">المدرسة بالكامل</option>
-                <option value="class">فصل محدد</option>
-                <option value="teacher">معلم محدد</option>
-                <option value="all_teachers">جميع المعلمين</option>
-                <option value="supervision">جدول يومي للفصول</option>
-            </select>
-            <select id="exportItem" disabled></select>
-            <button id="preview-button" onclick="previewTable()">معاينة</button>
-            <button id="export-button">تصدير PDF</button>
-            <button id="excel-export-button" onclick="exportToExcel()">تصدير Excel</button>
-            <button id="print-button" onclick="printTable()">طباعة</button>
-        </div>
-
-        <div class="canvas-wrapper">
-             <canvas id="timetableCanvas"></canvas>
-        </div>
-        
-        <div class="summary-section">
-            <h3>ملخص الجدول</h3>
-            <div id="schedule-summary">لم يتم إنشاء جدول بعد. الرجاء استخدام "توزيع عشوائي" أو تعبئة الجدول يدوياً.</div>
+        <div id="register-form" class="hidden">
+            <h1>إنشاء حساب جديد</h1>
+            <div class="form-group">
+                <input type="text" id="register-name" placeholder="الاسم الكامل" required>
+            </div>
+            <div class="form-group">
+                <input type="email" id="register-email" placeholder="البريد الإلكتروني" required>
+            </div>
+            <div class="form-group">
+                <input type="tel" id="register-phone" placeholder="رقم الهاتف" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="register-password" placeholder="كلمة المرور" required>
+            </div>
+            <button class="btn-primary" onclick="registerUser()">إنشاء حساب</button>
+            <p class="toggle-link"><a onclick="toggleForms()">لديك حساب بالفعل؟ سجل الدخول</a></p>
         </div>
     </div>
 
-    <!-- Modals Area -->
-    <!-- Display Settings Modal -->
-    <div id="display-settings-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>إعدادات عرض الجدول</h2>
-                <span class="close-button" onclick="closeModal('display-settings-modal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="cell-width-slider">عرض الحصة (العمود)</label>
-                    <div class="slider-group">
-                        <input type="range" id="cell-width-slider" min="50" max="200" step="5">
-                        <span id="cell-width-value"></span>
-                    </div>
-                </div>
-                 <div class="form-group">
-                    <label for="cell-height-slider">ارتفاع الصف</label>
-                    <div class="slider-group">
-                        <input type="range" id="cell-height-slider" min="50" max="150" step="5">
-                        <span id="cell-height-value"></span>
-                    </div>
-                </div>
-                 <div class="form-group">
-                    <label for="font-size-slider">حجم الخط الرئيسي</label>
-                    <div class="slider-group">
-                        <input type="range" id="font-size-slider" min="8" max="20" step="1">
-                        <span id="font-size-value"></span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="line-width-slider">سمك الخطوط</label>
-                    <div class="slider-group">
-                        <input type="range" id="line-width-slider" min="1" max="5" step="1">
-                        <span id="line-width-value"></span>
-                    </div>
-                </div>
-                <button class="btn-primary" onclick="closeModal('display-settings-modal')">تم</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>إعدادات الجدول</h2>
-                <span class="close-button" onclick="closeModal('settings-modal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="school-name-input">اسم المدرسة:</label>
-                    <input type="text" id="school-name-input" placeholder="اسم المدرسة الرسمي">
-                </div>
-                <div class="form-group">
-                    <label for="designer-name-input">مصمم الجدول:</label>
-                    <input type="text" id="designer-name-input" placeholder="اسمك أو اسم القسم">
-                </div>
-                <hr>
-                <div class="form-group">
-                    <label for="days-input">أيام الدراسة (مفصولة بفاصلة ,):</label>
-                    <input type="text" id="days-input">
-                </div>
-                <div class="form-group">
-                    <label for="periods-input">عدد الحصص اليومية:</label>
-                    <input type="number" id="periods-input" min="1" max="12">
-                </div>
-                <button class="btn-primary" onclick="saveSettings()">حفظ الإعدادات</button>
-            </div>
-        </div>
-    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-    <!-- Teachers Modal -->
-    <div id="teachers-modal" class="modal">
-        <div class="modal-content">
-             <div class="modal-header">
-                <h2>إدارة المعلمين</h2>
-                <span class="close-button" onclick="closeModal('teachers-modal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <ul id="teachers-list"></ul>
-                <hr>
-                <div class="form-group">
-                    <label>إضافة/تعديل معلم:</label>
-                    <input type="text" id="teacher-name-input" placeholder="اسم المعلم">
-                    <select id="teacher-subject-select">
-                        <option value="">-- اختر المادة الأساسية --</option>
-                    </select>
-                    <input type="hidden" id="teacher-id-input">
-                </div>
-                <button class="btn-primary" onclick="saveTeacher()">حفظ المعلم</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Teacher Constraints Modal -->
-    <div id="constraints-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="constraints-teacher-name"></h2>
-                <span class="close-button" onclick="closeModal('constraints-modal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>حدد الأوقات التي يكون فيها المعلم <strong>غير متاح</strong>.</p>
-                <div class="full-day-checkbox">
-                    <input type="checkbox" id="select-all-day">
-                    <label for="select-all-day">تحديد اليوم كاملاً</label>
-                    <select id="day-selector">
-                        <option value="-1">جميع الأيام</option>
-                    </select>
-                    <button onclick="applyFullDayConstraint()">تطبيق</button>
-                </div>
-                <div id="constraints-grid"></div>
-                <hr>
-                <button class="btn-primary" onclick="saveConstraints()">حفظ القيود</button>
-                <input type="hidden" id="constraints-teacher-id">
-            </div>
-        </div>
-    </div>
-    
-    <!-- Classes Modal -->
-     <div id="classes-modal" class="modal">
-        <div class="modal-content">
-             <div class="modal-header">
-                <h2>إدارة الفصول</h2>
-                <span class="close-button" onclick="closeModal('classes-modal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <ul id="classes-list"></ul>
-                <hr>
-                <div class="form-group">
-                     <label>إضافة/تعديل فصل:</label>
-                    <input type="text" id="class-name-input" placeholder="اسم الفصل">
-                    <input type="hidden" id="class-id-input">
-                </div>
-                <button class="btn-primary" onclick="saveClass()">حفظ الفصل</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Subjects Modal -->
-    <div id="subjects-modal" class="modal">
-        <div class="modal-content">
-             <div class="modal-header">
-                <h2>إدارة المواد</h2>
-                <span class="close-button" onclick="closeModal('subjects-modal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <ul id="subjects-list"></ul>
-                <hr>
-                <div class="form-group">
-                    <label>إضافة/تعديل مادة:</label>
-                    <input type="text" id="subject-name-input" placeholder="اسم المادة">
-                    <input type="color" id="subject-color-input" value="#d1e7dd">
-                    <div class="slider-group">
-                        <label for="subject-quota-input">النصاب الأسبوعي:</label>
-                        <input type="number" id="subject-quota-input" min="1" max="20" value="3" style="width: 70px;">
-                    </div>
-                    <input type="hidden" id="subject-id-input">
-                </div>
-                <button class="btn-primary" onclick="saveSubject()">حفظ المادة</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Assignments Modal -->
-    <div id="assignments-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>إدارة الأنصبة</h2>
-                <span class="close-button" onclick="closeModal('assignments-modal')">&times;</span>
-            </div>
-            <div class="modal-body">
-                <ul id="assignments-list"></ul>
-                <hr>
-                <div class="form-group">
-                    <label>إضافة نصاب جديد:</label>
-                    <select id="assignment-classes-select" multiple></select>
-                     <p class="small-text">لدمج الفصول، استخدم Ctrl+Click لاختيار متعدد.</p>
-                    <select id="assignment-subject-select"></select>
-                    <select id="assignment-teachers-select" multiple></select>
-                    <p class="small-text">لتقسيم الفصل، استخدم Ctrl+Click لاختيار متعدد.</p>
-                    <input type="number" id="assignment-count-input" placeholder="عدد الحصص الأسبوعية" min="1" style="margin-top: 10px;">
-                </div>
-                <button class="btn-primary" onclick="addAssignment()">إضافة نصاب</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Custom Alert/Confirm Modal -->
-    <div id="alert-modal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2 id="alert-title">تنبيه</h2>
-                <span class="close-button" onclick="closeAlert()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="alert-message" style="font-size: 16px;"></p>
-                <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
-                    <button id="alert-confirm-btn" class="btn-primary">موافق</button>
-                    <button id="alert-cancel-btn" class="btn-danger" onclick="closeAlert()">إلغاء</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Preview Modal -->
-    <div id="preview-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="preview-title">معاينة الجدول</h2>
-                <span class="close-button" onclick="closeModal('preview-modal')">&times;</span>
-            </div>
-            <div class="modal-body" id="preview-content-wrapper">
-                 <!-- Preview table will be injected here -->
-                 <div class="preview-controls">
-                    <div class="control-group">
-                        <label for="preview-font-size">حجم الخط (px)</label>
-                        <input type="number" id="preview-font-size" value="14" oninput="updatePreviewStyles()">
-                    </div>
-                    <div class="control-group">
-                        <label for="preview-cell-padding">الهامش الداخلي (px)</label>
-                        <input type="number" id="preview-cell-padding" value="5" oninput="updatePreviewStyles()">
-                    </div>
-                 </div>
-                 <div id="preview-content"></div>
-            </div>
-        </div>
-    </div>
-
-    <input type="file" id="backup-file-input" accept=".json" style="display: none;">
-
-    <!-- رابط ملف الخوارزمية -->
-    <script src="scheduler-logic.js"></script>
-    <!-- رابط ملف الجافاسكربت الرئيسي -->
-    <script src="script.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
 
 </body>
 </html>
-
