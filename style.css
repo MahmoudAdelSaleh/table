@@ -19,6 +19,7 @@ body {
     padding: 20px;
     width: 100vw;
     box-sizing: border-box;
+    overflow-x: hidden;
 }
 h1 {
     color: var(--primary-color);
@@ -112,8 +113,13 @@ canvas {
 #constraints-modal .modal-content {
     max-width: 90vw;
 }
+#preview-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 40px);
+}
 #preview-content {
-    height: calc(100% - 40px); 
+    flex-grow: 1;
     overflow: auto;
 }
 .modal-header {
@@ -147,6 +153,8 @@ canvas {
     max-height: 200px; 
     overflow-y: auto; 
     margin: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
 }
 .modal-body li {
     display: flex; 
@@ -203,6 +211,7 @@ canvas {
     text-align: center; 
     font-size: 12px;
     margin-bottom: 15px;
+    overflow-x: auto;
 }
 #constraints-grid div { display: flex; justify-content: center; align-items: center; }
 #constraints-grid label { display: block; }
@@ -211,6 +220,7 @@ canvas {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 /* Responsive adjustments */
