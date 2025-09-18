@@ -26,6 +26,9 @@
             --copy-color: #9b59b6;
             --conflict-color-glow: rgba(255, 82, 82, 0.7);
             --base-font-size: 14px;
+            --first-column-width: 100px;
+            --data-column-width: 85px;
+            --data-row-height: 85px;
         }
         
         body {
@@ -115,39 +118,59 @@
         }
 
         button:hover { background-color: #2980b9; }
-        button.edit-btn { background-color: var(--warning-color); padding: 5px 10px; font-size: 0.9em; margin: 0 5px; }
+        button.edit-btn { background-color: var(--warning-color); padding: 5px 10px; font-size: 0.9em; margin: 0; }
         button.edit-btn:hover { background-color: #e67e22; }
-        button.delete-btn { background-color: var(--danger-color); padding: 5px 10px; font-size: 0.9em; margin: 0 5px;}
+        button.delete-btn { background-color: var(--danger-color); padding: 5px 10px; font-size: 0.9em; margin: 0;}
         button.delete-btn:hover { background-color: #c0392b; }
         button.cancel-btn { background-color: var(--medium-gray); }
         button.cancel-btn:hover { background-color: #95a5a6; }
-        button.copy-btn { background-color: var(--copy-color); padding: 5px 10px; font-size: 0.9em; margin: 0 5px;}
+        button.copy-btn { background-color: var(--copy-color); padding: 5px 10px; font-size: 0.9em; margin: 0;}
         button.copy-btn:hover { background-color: #8e44ad; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 0; }
         th, td { border: 1px solid #ddd; padding: 2px; text-align: center; vertical-align: middle; }
         
-        .main-schedule-container table { table-layout: auto; }
-        .main-schedule-container th:first-child, .main-schedule-container td:first-child { width: auto; white-space: nowrap; padding: 0 10px;}
-        .main-schedule-container th:not(:first-child), .main-schedule-container td:not(:first-child) { width: 90px; height: 90px; }
+        .table-wrapper {
+            border: 3px solid var(--secondary-color);
+            display: inline-block;
+            max-width: 100%;
+        }
+        .main-schedule-container table { table-layout: fixed; }
+        .main-schedule-container th:first-child, .main-schedule-container td:first-child { 
+            width: var(--first-column-width); 
+            white-space: normal; 
+            word-break: break-word; 
+            padding: 0 10px;
+        }
+        .main-schedule-container th:not(:first-child), .main-schedule-container td:not(:first-child),
+        #dailyScheduleTable th, #dailyScheduleTable td { 
+            width: var(--data-column-width); 
+            height: var(--data-row-height); 
+        }
         
         th { background-color: var(--secondary-color); color: var(--white); position: sticky; top: 0; z-index: 2; }
-        .main-schedule-container th:first-child { position: sticky; left: 0; z-index: 3; }
-        .main-schedule-container td:first-child { font-weight: bold; background-color: var(--light-gray); position: sticky; left: 0; z-index: 1; }
+        .main-schedule-container th:first-child { position: sticky; right: 0; z-index: 3; }
+        .main-schedule-container td:first-child { font-weight: bold; background-color: var(--light-gray); position: sticky; right: 0; z-index: 1; }
         
         .card {
             background-color: var(--primary-color); color: var(--white);
-            border-radius: 8px; cursor: grab;
+            border-radius: 6px; cursor: grab;
             font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             text-align: center; overflow: hidden; white-space: normal;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            width: 100%; height: 100%; box-sizing: border-box; padding: 2px;
-            font-size: 0.8em; line-height: 1.2;
+            width: 90%; height: 90%; box-sizing: border-box; padding: 2px;
+            font-size: 0.75em; line-height: 1.2;
+            transition: transform 0.2s ease, opacity 0.2s ease;
         }
         .unassigned-card {
-            width: 100px; height: 60px; margin: 4px; display: inline-flex; padding: 4px;
+            width: 75px; height: 75px;
+            margin: 4px; display: inline-flex;
         }
-        .card:active { cursor: grabbing; opacity: 0.8; }
+        .card:active, .card.dragging { 
+            cursor: grabbing; 
+            opacity: 0.5; 
+            transform: scale(0.95);
+        }
         
         .available-slot { box-shadow: inset 0 0 15px 5px rgba(76, 175, 80, 0.6); }
         .unavailable-slot { box-shadow: inset 0 0 15px 5px rgba(244, 67, 54, 0.6); }
@@ -155,7 +178,7 @@
 
         #unassigned-cards-container {
             background-color: #e8eaf6; border: 2px dashed var(--primary-color); border-radius: 8px;
-            padding: 10px; margin-top: 20px; min-height: 80px; display: flex;
+            padding: 10px; margin-top: 20px; min-height: 90px; display: flex;
             flex-wrap: wrap; align-content: flex-start;
         }
 
@@ -172,7 +195,7 @@
         .schedule-print-header h3 { margin: 0; }
         .schedule-print-header p { margin: 2px 0; }
         
-        .day-divider { border-left: 3px solid var(--secondary-color) !important; }
+        .day-divider { border-right: 3px solid var(--secondary-color) !important; }
 
         .text-display { display: none; }
         
@@ -291,6 +314,9 @@
                             <option value="text">نص فقط</option>
                         </select>
                     </div>
+                    <div><label for="firstColumnWidth">عرض العمود الأول (px)</label><input type="number" id="firstColumnWidth" min="50"></div>
+                    <div><label for="dataColumnWidth">عرض عمود الحصص (px)</label><input type="number" id="dataColumnWidth" min="50"></div>
+                    <div><label for="dataRowHeight">ارتفاع الصف (px)</label><input type="number" id="dataRowHeight" min="50"></div>
                 </div>
                  <div style="text-align: center; margin-top: 20px;">
                     <button id="updateSettingsBtn">حفظ وتطبيق الإعدادات</button>
@@ -410,19 +436,25 @@
             <div id="class-general-view" class="view-container" style="display:block;">
                 <div class="schedule-print-header"></div>
                 <div style="overflow-x: auto;" class="main-schedule-container">
-                    <table id="scheduleTable"><thead></thead><tbody></tbody></table>
+                    <div class="table-wrapper">
+                        <table id="scheduleTable"><thead></thead><tbody></tbody></table>
+                    </div>
                 </div>
             </div>
             <div id="teacher-general-view" class="view-container">
                 <div class="schedule-print-header"></div>
                 <div style="overflow-x: auto;" class="main-schedule-container">
-                    <table id="teacherScheduleTable"><thead></thead><tbody></tbody></table>
+                    <div class="table-wrapper">
+                        <table id="teacherScheduleTable"><thead></thead><tbody></tbody></table>
+                    </div>
                 </div>
             </div>
             <div id="daily-view" class="view-container">
                 <div class="schedule-print-header"></div>
                 <div style="overflow-x: auto;" class="main-schedule-container">
-                    <table id="dailyScheduleTable"><thead></thead><tbody></tbody></table>
+                    <div class="table-wrapper">
+                        <table id="dailyScheduleTable"><thead></thead><tbody></tbody></table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -474,8 +506,18 @@
             <h3>الوصول الكامل للبرنامج</h3>
             <p>لعرض باقي أيام الأسبوع والحصول على جميع الميزات، يرجى الاشتراك في النسخة الكاملة.</p>
             <h4>للدفع واشتراك تواصل معنا:</h4>
-            <p><strong>Instapay Link:</strong> <a href="https://ipn.eg/S/mahmoud79070/instapay/6qDwHfn" target="_blank">اضغط هنا للدفع</a></p>
-            <p><strong>WhatsApp:</strong> +201552402912</p>
+            <div style="margin: 15px 0;">
+                <strong>Instapay</strong>
+                <p>امسح الكود التالي للدفع</p>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://ipn.eg/S/mahmoud79070/instapay/6qDwHfn" alt="Instapay QR Code">
+                <p><a href="https://ipn.eg/S/mahmoud79070/instapay/6qDwHfn" target="_blank">أو اضغط هنا للدفع</a></p>
+            </div>
+            <div style="margin: 15px 0;">
+                <a id="whatsapp-link" href="https://wa.me/201552402912?text=%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D8%A7%D9%84%D9%86%D8%B3%D8%AE%D8%A9%20%D8%A7%D9%84%D9%83%D8%A7%D9%85%D9%84%D8%A9%20%D9%84%D8%A8%D8%B1%D9%86%D8%A7%D9%85%D8%AC%20%D9%85%D9%86%D8%B8%D9%85%20%D8%AC%D8%AF%D9%88%D9%84%20%D8%A7%D9%84%D8%AD%D8%B5%D8%B5." target="_blank" style="text-decoration: none; color: #25D366; font-size: 1.2em; display: inline-flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91c0-5.46-4.45-9.91-9.91-9.91M17.5 14.3c-.27-.14-1.59-.78-1.84-.88c-.25-.09-.43-.14-.61.14c-.18.28-.69.88-.85 1.06c-.15.18-.3.2-.56.07c-.26-.14-1.11-.41-2.11-1.3c-.78-.69-1.3-1.54-1.46-1.8c-.16-.28-.01-.43.12-.56c.12-.12.27-.3.4-.46c.14-.15.18-.25.27-.42c.09-.17.05-.31-.02-.45c-.07-.14-.61-1.47-.84-2.01c-.23-.54-.46-.47-.61-.47c-.15 0-.33-.02-.51-.02c-.18 0-.48.07-.73.35c-.25.28-.97.94-.97 2.3c0 1.36 1 2.66 1.14 2.84c.14.18 1.97 3.01 4.79 4.22c.69.29 1.23.47 1.65.6c.71.22 1.36.19 1.88.11c.57-.08 1.59-.65 1.81-1.29c.23-.64.23-1.18.16-1.3c-.07-.12-.25-.2-.51-.34"/></svg>
+                    <span>تواصل عبر واتساب</span>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -561,7 +603,8 @@
                     schoolName: 'مدرستي', academicYear: '2025-2026', schedulerName: 'مسئول الجدول',
                     daysCount: 5, periodsCount: 7, startDay: 'الأحد', breakAfterPeriod: 4,
                     periodDuration: 45, startTime: '08:00', showBreak: true, showTime: true,
-                    fontSize: 14, displayStyle: 'cards'
+                    fontSize: 14, displayStyle: 'cards',
+                    firstColumnWidth: 100, dataColumnWidth: 85, dataRowHeight: 85
                 }
             };
             const batch = db.batch();
@@ -587,7 +630,8 @@
                 schoolName: 'مدرستي الابتدائية', academicYear: '2025-2026', schedulerName: 'مسئول الجدول',
                 daysCount: 5, periodsCount: 7, startDay: 'الأحد', breakAfterPeriod: 4,
                 periodDuration: 45, startTime: '08:00', showBreak: true, showTime: true,
-                fontSize: 14, displayStyle: 'cards'
+                fontSize: 14, displayStyle: 'cards',
+                firstColumnWidth: 100, dataColumnWidth: 85, dataRowHeight: 85
             }; 
         }
 
@@ -619,6 +663,9 @@
             document.getElementById('fontSize').value = scheduleSettings.fontSize;
             document.getElementById('fontSizeValue').textContent = scheduleSettings.fontSize;
             document.getElementById('displayStyle').value = scheduleSettings.displayStyle;
+            document.getElementById('firstColumnWidth').value = scheduleSettings.firstColumnWidth || 100;
+            document.getElementById('dataColumnWidth').value = scheduleSettings.dataColumnWidth || 85;
+            document.getElementById('dataRowHeight').value = scheduleSettings.dataRowHeight || 85;
             
             const startDaySelect = document.getElementById('startDay');
             startDaySelect.innerHTML = '';
@@ -642,6 +689,9 @@
             scheduleSettings.showTime = document.getElementById('showTime').checked;
             scheduleSettings.fontSize = document.getElementById('fontSize').value;
             scheduleSettings.displayStyle = document.getElementById('displayStyle').value;
+            scheduleSettings.firstColumnWidth = parseInt(document.getElementById('firstColumnWidth').value, 10);
+            scheduleSettings.dataColumnWidth = parseInt(document.getElementById('dataColumnWidth').value, 10);
+            scheduleSettings.dataRowHeight = parseInt(document.getElementById('dataRowHeight').value, 10);
             
             const dayIndex = allPossibleDays.indexOf(scheduleSettings.startDay);
             scheduleSettings.days = allPossibleDays.slice(dayIndex, dayIndex + scheduleSettings.daysCount);
@@ -656,7 +706,11 @@
         }
         
         function applyVisualSettings() {
-            document.documentElement.style.setProperty('--base-font-size', scheduleSettings.fontSize + 'px');
+            const root = document.documentElement;
+            root.style.setProperty('--base-font-size', scheduleSettings.fontSize + 'px');
+            root.style.setProperty('--first-column-width', (scheduleSettings.firstColumnWidth || 100) + 'px');
+            root.style.setProperty('--data-column-width', (scheduleSettings.dataColumnWidth || 85) + 'px');
+            root.style.setProperty('--data-row-height', (scheduleSettings.dataRowHeight || 85) + 'px');
             document.body.classList.toggle('text-mode', scheduleSettings.displayStyle === 'text');
         }
 
@@ -733,10 +787,10 @@
                 const li = document.createElement('li');
                 li.style.display = 'flex'; li.style.justifyContent = 'space-between'; li.style.alignItems = 'center';
                 li.innerHTML = `<span>${c}</span>
-                              <div>
-                                  <button class="edit-btn" onclick="editClass('${c}')">تعديل</button>
-                                  <button class="delete-btn" onclick="deleteClass('${c}')">حذف</button>
-                              </div>`;
+                                <div>
+                                    <button class="edit-btn" onclick="editClass('${c}')">تعديل</button>
+                                    <button class="delete-btn" onclick="deleteClass('${c}')">حذف</button>
+                                </div>`;
                 list.appendChild(li);
             });
         }
@@ -810,10 +864,10 @@
                 const li = document.createElement('li');
                 li.style.display = 'flex'; li.style.justifyContent = 'space-between'; li.style.alignItems = 'center';
                 li.innerHTML = `<span>${s.name} (${s.periods} حصص)</span>
-                              <div>
-                                  <button class="edit-btn" onclick="editSubject('${s.name}')">تعديل</button>
-                                  <button class="delete-btn" onclick="deleteSubject('${s.name}')">حذف</button>
-                              </div>`;
+                                <div>
+                                    <button class="edit-btn" onclick="editSubject('${s.name}')">تعديل</button>
+                                    <button class="delete-btn" onclick="deleteSubject('${s.name}')">حذف</button>
+                                </div>`;
                 list.appendChild(li); 
             });
         }
@@ -1053,10 +1107,12 @@
             quotas.forEach(q => {
                 const row = quotaBody.insertRow();
                 row.innerHTML = `<td>${q.classNames.join(', ')}</td><td>${q.subject}</td><td>${q.teacherNames.join(' و ')}</td><td>${q.weeklyPeriods}</td>
-                    <td>
-                        <button class="copy-btn" onclick="openCopyQuotaModal(${q.id})">نسخ</button>
-                        <button class="edit-btn" onclick="editQuota(${q.id})">تعديل</button>
-                        <button class="delete-btn" onclick="deleteQuota(${q.id})">حذف</button>
+                    <td style="padding: 2px;">
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; gap: 5px;">
+                            <button class="copy-btn" onclick="openCopyQuotaModal(${q.id})">نسخ</button>
+                            <button class="edit-btn" onclick="editQuota(${q.id})">تعديل</button>
+                            <button class="delete-btn" onclick="deleteQuota(${q.id})">حذف</button>
+                        </div>
                     </td>`;
             });
         }
@@ -1103,11 +1159,11 @@
             cards = [];
             quotas.forEach(quota => {
                 for (let i = 0; i < quota.weeklyPeriods; i++) {
-                     cards.push({
-                        id: `card-${quota.id}-${quota.classNames.join('-')}-${i}`, quotaId: quota.id, classNames: quota.classNames,
-                        content: `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small><br><b>(${quota.classNames.join(', ')})</b>`,
-                        color: getSubjectColor(quota.subject)
-                    });
+                       cards.push({
+                            id: `card-${quota.id}-${quota.classNames.join('-')}-${i}`, quotaId: quota.id, classNames: quota.classNames,
+                            content: `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small><br><b>(${quota.classNames.join(', ')})</b>`,
+                            color: getSubjectColor(quota.subject)
+                        });
                 }
             });
         }
@@ -1173,31 +1229,54 @@
 
             const headerRow1 = table.tHead.insertRow(); 
             headerRow1.insertCell().textContent = headerTexts.main;
-            days.forEach(day => {
+            days.forEach((day, dayIndex) => {
                 const th = headerRow1.insertCell(); th.textContent = day;
-                th.colSpan = columnsPerDay; th.classList.add('day-divider');
+                th.colSpan = columnsPerDay;
+                if (dayIndex > 0) {
+                    th.classList.add('day-divider');
+                }
             });
             
             const headerRow2 = table.tHead.insertRow(); 
             headerRow2.insertCell().textContent = headerTexts.sub;
-            days.forEach(() => {
+            days.forEach((day, dayIndex) => {
                 for (let i = 1; i <= periodsCount; i++) {
-                    if (showBreak && i === breakAfterPeriod + 1) headerRow2.insertCell().textContent = 'فسحة';
-                    headerRow2.insertCell().textContent = i;
+                    if (showBreak && i === breakAfterPeriod + 1) {
+                        const breakCell = headerRow2.insertCell();
+                        breakCell.textContent = 'فسحة';
+                        if (i === 1 && dayIndex > 0) {
+                           breakCell.classList.add('day-divider');
+                        }
+                    }
+                    const periodCell = headerRow2.insertCell();
+                    periodCell.textContent = i;
+                    if (i === 1 && dayIndex > 0 && !(showBreak && breakAfterPeriod === 0)) {
+                        periodCell.classList.add('day-divider');
+                    }
                 }
             });
 
             if (showTime) {
                 const headerRow3 = table.tHead.insertRow(); 
                 headerRow3.insertCell().textContent = 'الوقت';
-                days.forEach(() => {
+                days.forEach((day, dayIndex) => {
                     currentTime = new Date(`1970-01-01T${startTime}`);
                     for (let i = 1; i <= periodsCount; i++) {
-                        if (showBreak && i === breakAfterPeriod + 1) headerRow3.insertCell().textContent = '';
+                        if (showBreak && i === breakAfterPeriod + 1) {
+                             const breakCell = headerRow3.insertCell();
+                             breakCell.textContent = '';
+                             if (i === 1 && dayIndex > 0) {
+                                breakCell.classList.add('day-divider');
+                             }
+                        }
+                        const timeCell = headerRow3.insertCell();
                         const startTimeStr = currentTime.toTimeString().substring(0, 5);
                         currentTime.setMinutes(currentTime.getMinutes() + periodDuration);
                         const endTimeStr = currentTime.toTimeString().substring(0, 5);
-                        headerRow3.insertCell().textContent = `${startTimeStr}-${endTimeStr}`;
+                        timeCell.textContent = `${startTimeStr}-${endTimeStr}`;
+                        if (i === 1 && dayIndex > 0 && !(showBreak && breakAfterPeriod === 0)) {
+                            timeCell.classList.add('day-divider');
+                        }
                     }
                 });
             }
@@ -1218,7 +1297,8 @@
             if (allClasses.length === 0) { const row = body.insertRow(); row.insertCell().colSpan = (scheduleSettings.periodsCount * scheduleSettings.days.length) + 1; row.cells[0].textContent = "لا توجد فصول."; } 
             else { allClasses.forEach(className => {
                     const row = body.insertRow(); row.dataset.class = className; row.insertCell().textContent = className;
-                    scheduleSettings.days.forEach((day, dayIndex) => { 
+                    scheduleSettings.days.forEach((day, dayIndex) => {
+                        const firstCellIndexForThisDay = row.cells.length;
                         for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
                             if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
                                 const breakCell = row.insertCell(); breakCell.style.backgroundColor = '#ddd';
@@ -1226,9 +1306,8 @@
                             const cell = row.insertCell(); cell.dataset.class = className; cell.dataset.day = day; cell.dataset.period = i;
                             cell.ondrop = drop; cell.ondragover = allowDrop; cell.ondragenter = dragEnter; cell.ondragleave = dragLeave;
                         }
-                        if (dayIndex < scheduleSettings.days.length - 1) {
-                            const lastCellInDay = row.cells[row.cells.length -1 ];
-                            lastCellInDay.classList.add('day-divider');
+                        if (dayIndex > 0) {
+                            row.cells[firstCellIndexForThisDay].classList.add('day-divider');
                         }
                     });
                 });
@@ -1241,13 +1320,13 @@
             allTeachers.forEach(teacher => {
                 const row = body.insertRow(); row.dataset.teacher = teacher.name; row.insertCell().textContent = teacher.name;
                 scheduleSettings.days.forEach((day, dayIndex) => { 
+                    const firstCellIndexForThisDay = row.cells.length;
                     for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
                         if (scheduleSettings.showBreak && p === scheduleSettings.breakAfterPeriod + 1) row.insertCell().style.backgroundColor = '#ddd';
                         const cell = row.insertCell(); cell.dataset.teacher = teacher.name; cell.dataset.day = day; cell.dataset.period = p; 
                     }
-                    if (dayIndex < scheduleSettings.days.length - 1) {
-                        const lastCellInDay = row.cells[row.cells.length - 1];
-                        lastCellInDay.classList.add('day-divider');
+                    if (dayIndex > 0) {
+                        row.cells[firstCellIndexForThisDay].classList.add('day-divider');
                     }
                 });
             });
@@ -1351,26 +1430,53 @@
         }
 
         function allowDrop(ev) { ev.preventDefault(); }
-        function drag(ev) { draggedCardId = ev.target.id; ev.dataTransfer.setData("text", ev.target.id); }
+        
+        function drag(ev) { 
+            draggedCardId = ev.target.id; 
+            ev.dataTransfer.setData("text", ev.target.id);
+            setTimeout(() => {
+                ev.target.classList.add('dragging');
+            }, 0);
+        }
         
         async function drop(ev) {
             ev.preventDefault();
-            const data = ev.dataTransfer.getData("text"); const draggedElement = document.getElementById(data); 
-            let target = ev.target.closest('td, #unassigned-cards-container');
-            if (target && draggedElement) {
-                const draggedCard = cards.find(c => c.id === draggedCardId); if (!draggedCard) return;
-                const oldPlacement = placements[draggedCard.id];
-                delete placements[draggedCard.id];
+            const data = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(data) || document.querySelector('.dragging');
+            if(draggedElement) draggedElement.classList.remove('dragging');
 
-                if (target.id !== 'unassigned-cards-container') {
-                    const hasConflict = target.classList.contains('conflict-slot') || target.classList.contains('unavailable-slot');
-                    if (!hasConflict) placements[draggedCard.id] = { day: target.dataset.day, period: target.dataset.period };
-                    else if (oldPlacement) placements[draggedCard.id] = oldPlacement;
+            clearAllHighlights();
+            let target = ev.target.closest('td, #unassigned-cards-container');
+            
+            if (target && draggedElement) {
+                const draggedCardId = draggedElement.id;
+                
+                if (target.id === 'unassigned-cards-container') {
+                    delete placements[draggedCardId];
+                } else {
+                    if (target.classList.contains('conflict-slot') || target.classList.contains('unavailable-slot')) {
+                        return;
+                    }
+                    const newPlacement = { day: target.dataset.day, period: target.dataset.period };
+                    const existingCardElement = target.querySelector('.card');
+                    const draggedCardOriginalPlacement = placements[draggedCardId];
+
+                    if (existingCardElement && existingCardElement.id !== draggedCardId) {
+                        const existingCardId = existingCardElement.id;
+                        placements[draggedCardId] = newPlacement;
+                        if (draggedCardOriginalPlacement) {
+                            placements[existingCardId] = draggedCardOriginalPlacement;
+                        } else {
+                            delete placements[existingCardId];
+                        }
+                    } else {
+                        placements[draggedCardId] = newPlacement;
+                    }
                 }
+                
                 await savePlacements(); 
                 renderAllListsAndTables();
             }
-            clearAllHighlights();
         }
 
         function dragEnter(ev) {
@@ -1379,8 +1485,16 @@
             const draggedCardData = cards.find(c => c.id === draggedCardId); if (!draggedCardData) return;
             const quota = quotas.find(q => q.id === draggedCardData.quotaId); if (!quota) return;
 
-            if (!draggedCardData.classNames.includes(target.dataset.class) || (target.childElementCount > 0 && !target.querySelector(`[id='${draggedCardId}']`))) { target.classList.add('unavailable-slot'); return; }
+            if (!draggedCardData.classNames.includes(target.dataset.class)) { 
+                target.classList.add('unavailable-slot'); 
+                return; 
+            }
             
+            const existingCardElement = target.querySelector('.card');
+            if (existingCardElement && existingCardElement.id === draggedCardId) {
+                return;
+            }
+
             const { day, period } = target.dataset; let hasConflict = false;
             for (const teacherName of quota.teacherNames) {
                 const teacher = allTeachers.find(t => t.name === teacherName);
@@ -1390,13 +1504,14 @@
             if (!hasConflict) {
                  const allCellsAtSameTime = document.querySelectorAll(`#scheduleTable td[data-day='${day}'][data-period='${period}']`);
                  for (const cell of allCellsAtSameTime) {
-                    if (cell.childElementCount > 0 && !cell.querySelector(`[id='${draggedCardId}']`)) {
-                        const existingCardId = cell.querySelector('.card')?.id;
-                        if(existingCardId) {
-                            const existingCardData = cards.find(c => c.id === existingCardId);
-                            if(existingCardData) {
-                                const existingQuota = quotas.find(q => q.id === existingCardData.quotaId); 
-                                if (existingQuota && quota.teacherNames.some(t => existingQuota.teacherNames.includes(t))) { hasConflict = true; break; }
+                    const occupyingCardElement = cell.querySelector('.card');
+                    if (occupyingCardElement && occupyingCardElement.id !== draggedCardId) {
+                        const existingCardData = cards.find(c => c.id === occupyingCardElement.id);
+                        if(existingCardData) {
+                            const existingQuota = quotas.find(q => q.id === existingCardData.quotaId); 
+                            if (existingQuota && quota.teacherNames.some(t => existingQuota.teacherNames.includes(t))) { 
+                                hasConflict = true; 
+                                break; 
                             }
                         }
                     }
@@ -1556,6 +1671,10 @@
         document.getElementById('teacher-selector').addEventListener('change', (e) => filterSingleView('teacher', e.target.value));
         document.getElementById('day-selector').addEventListener('change', (e) => handleDaySelection(e.target.value));
         document.getElementById('subject').addEventListener('change', filterTeachersBySubject);
+        document.addEventListener('dragend', () => {
+            document.querySelectorAll('.dragging').forEach(d => d.classList.remove('dragging'));
+        });
     </script>
 </body>
-</html>           
+</html>
+
