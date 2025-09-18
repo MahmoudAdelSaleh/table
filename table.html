@@ -201,7 +201,7 @@
         #app-container { display: none; }
         .auth-container { max-width: 400px; margin: 5% auto; }
         .auth-form { display: flex; flex-direction: column; gap: 15px; }
-        #auth-toggle { color: var(--primary-color); cursor: pointer; text-align: center; margin-top: 10px; }
+        .auth-toggle { color: var(--primary-color); cursor: pointer; text-align: center; margin-top: 10px; }
         #user-info { text-align: left; padding: 10px; }
         
         @media (max-width: 768px) {
@@ -1485,7 +1485,7 @@
             setTimeout(() => { if (isBw) { document.body.classList.remove('print-bw'); } }, 500);
         }
         
-        // --- Event listeners at the end of the script ---
+        // --- Event listeners Setup ---
         auth.onAuthStateChanged(async user => {
             const authContainer = document.getElementById('auth-container');
             const appContainer = document.getElementById('app-container');
@@ -1528,7 +1528,6 @@
             document.getElementById('fontSizeValue').textContent = e.target.value;
         });
 
-        // Event listeners for buttons
         document.getElementById('updateSettingsBtn').addEventListener('click', updateSettings);
         document.getElementById('cancelClassEditBtn').addEventListener('click', resetClassForm);
         document.getElementById('cancelSubjectEditBtn').addEventListener('click', resetSubjectForm);
@@ -1551,7 +1550,7 @@
             });
         });
         document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', () => switchView(btn.dataset.view));
+            btn.addEventListener('click', (e) => switchView(e.target.dataset.view));
         });
         document.getElementById('class-selector').addEventListener('change', (e) => filterSingleView('class', e.target.value));
         document.getElementById('teacher-selector').addEventListener('change', (e) => filterSingleView('teacher', e.target.value));
@@ -1560,4 +1559,4 @@
     });
     </script>
 </body>
-</html>  
+</html>           
