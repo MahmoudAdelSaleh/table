@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -481,17 +481,16 @@
 
     <script>
         // --- ضع معلومات تهيئة Firebase هنا ---
-       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCJO-P9t196m4lzBPp7EHjQLUhWikIMH3U",
-  authDomain: "turing-diode-468718-b3.firebaseapp.com",
-  databaseURL: "https://turing-diode-468718-b3-default-rtdb.firebaseio.com",
-  projectId: "turing-diode-468718-b3",
-  storageBucket: "turing-diode-468718-b3.firebasestorage.app",
-  messagingSenderId: "492366336701",
-  appId: "1:492366336701:web:e56c66aaff89c2af709dd4",
-  measurementId: "G-FPRZJRNG29"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJO-P9t196m4lzBPp7EHjQLUhWikIMH3U",
+            authDomain: "turing-diode-468718-b3.firebaseapp.com",
+            databaseURL: "https://turing-diode-468718-b3-default-rtdb.firebaseio.com",
+            projectId: "turing-diode-468718-b3",
+            storageBucket: "turing-diode-468718-b3.appspot.com",
+            messagingSenderId: "492366336701",
+            appId: "1:492366336701:web:e56c66aaff89c2af709dd4",
+            measurementId: "G-FPRZJRNG29"
+        };
 
         // --- تهيئة Firebase ---
         firebase.initializeApp(firebaseConfig);
@@ -511,7 +510,7 @@ const firebaseConfig = {
         let draggedCardId = null;
         const allPossibleDays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
         
-        // --- وظائف الحفظ (سيتم تحديثها لتستخدم Firestore) ---
+        // --- All Functions ---
         const saveClasses = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('classes').set({ list: allClasses }); };
         const saveSubjects = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('subjects').set({ list: allSubjects }); };
         const saveTeachers = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('teachers').set({ list: allTeachers }); };
@@ -519,54 +518,6 @@ const firebaseConfig = {
         const savePlacements = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('placements').set(placements); };
         const saveSettings = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('settings').set(scheduleSettings); };
 
-        // --- تهيئة التطبيق والمصادقة ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Listen for auth state changes
-            auth.onAuthStateChanged(async user => {
-                const authContainer = document.getElementById('auth-container');
-                const appContainer = document.getElementById('app-container');
-
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('user-email').textContent = user.email;
-
-                    // Fetch user role
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists) {
-                        userRole = userDoc.data().role || 'user';
-                    }
-
-                    // Fetch user data from Firestore
-                    await loadUserData();
-
-                    // Apply settings and render UI
-                    initializeSettingsForm();
-                    updateSettings(false);
-                    
-                    authContainer.style.display = 'none';
-                    appContainer.style.display = 'block';
-
-                    // Show/hide admin controls
-                    const exportControls = document.querySelector('.export-options');
-                    if (exportControls) {
-                        exportControls.style.display = userRole === 'admin' ? 'flex' : 'none';
-                    }
-
-                } else {
-                    currentUser = null;
-                    userRole = 'user';
-                    authContainer.style.display = 'block';
-                    appContainer.style.display = 'none';
-                }
-            });
-
-            // Auth Form Event Listeners
-            document.getElementById('login-form').addEventListener('submit', handleLogin);
-            document.getElementById('signup-form').addEventListener('submit', handleSignup);
-            document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
-        });
-
-        // --- دوال المصادقة ---
         function toggleAuthView(showLogin) {
             document.getElementById('login-view').style.display = showLogin ? 'block' : 'none';
             document.getElementById('signup-view').style.display = showLogin ? 'none' : 'block';
@@ -591,16 +542,13 @@ const firebaseConfig = {
             try {
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
-                // Create user profile and default data in Firestore
                 await db.collection('users').doc(user.uid).set({ email: user.email, role: 'user' });
-                // Initialize default data for the new user
                 await initializeDefaultUserData(user.uid);
             } catch (error) {
                 document.getElementById('auth-error').textContent = "فشل إنشاء الحساب: " + error.message;
             }
         }
 
-        // --- تحميل وإنشاء بيانات المستخدم ---
         async function initializeDefaultUserData(uid) {
             const defaultData = {
                 classes: { list: ["1/1", "1/2", "2/1"] },
@@ -615,7 +563,6 @@ const firebaseConfig = {
                     fontSize: 14, displayStyle: 'cards'
                 }
             };
-
             const batch = db.batch();
             for (const key in defaultData) {
                 const docRef = db.collection('users').doc(uid).collection('data').doc(key);
@@ -635,12 +582,14 @@ const firebaseConfig = {
             allTeachers = teachersDoc.exists ? teachersDoc.data().list : [];
             quotas = quotasDoc.exists ? quotasDoc.data().list : [];
             placements = placementsDoc.exists ? placementsDoc.data() : {};
-            scheduleSettings = settingsDoc.exists ? settingsDoc.data() : scheduleSettings; // Fallback to default
+            scheduleSettings = settingsDoc.exists ? settingsDoc.data() : {
+                schoolName: 'مدرستي الابتدائية', academicYear: '2025-2026', schedulerName: 'مسئول الجدول',
+                daysCount: 5, periodsCount: 7, startDay: 'الأحد', breakAfterPeriod: 4,
+                periodDuration: 45, startTime: '08:00', showBreak: true, showTime: true,
+                fontSize: 14, displayStyle: 'cards'
+            }; 
         }
 
-
-        // ... (The rest of the JS code remains largely the same, but I will put it here for completeness)
-        
         function renderAllListsAndTables(){
             generateCards();
             renderClassesList();
@@ -650,14 +599,75 @@ const firebaseConfig = {
             renderQuotaTable();
             renderGeneralClassView();
             renderGeneralTeacherView();
-            renderDailyView(document.getElementById('day-selector')?.value || scheduleSettings.days[0]);
+            renderDailyView(document.getElementById('day-selector')?.value || (scheduleSettings.days ? scheduleSettings.days[0] : ''));
             renderUnassignedCards();
             updatePrintHeaders();
         }
 
-        // --- إدارة البيانات الأساسية ---
+        function initializeSettingsForm() {
+            document.getElementById('schoolName').value = scheduleSettings.schoolName;
+            document.getElementById('academicYear').value = scheduleSettings.academicYear;
+            document.getElementById('schedulerName').value = scheduleSettings.schedulerName;
+            document.getElementById('daysCount').value = scheduleSettings.daysCount;
+            document.getElementById('periodsCount').value = scheduleSettings.periodsCount;
+            document.getElementById('breakAfterPeriod').value = scheduleSettings.breakAfterPeriod;
+            document.getElementById('periodDuration').value = scheduleSettings.periodDuration;
+            document.getElementById('startTime').value = scheduleSettings.startTime;
+            document.getElementById('showBreak').checked = scheduleSettings.showBreak;
+            document.getElementById('showTime').checked = scheduleSettings.showTime;
+            document.getElementById('fontSize').value = scheduleSettings.fontSize;
+            document.getElementById('fontSizeValue').textContent = scheduleSettings.fontSize;
+            document.getElementById('displayStyle').value = scheduleSettings.displayStyle;
+            
+            const startDaySelect = document.getElementById('startDay');
+            startDaySelect.innerHTML = '';
+            allPossibleDays.forEach(day => {
+                startDaySelect.innerHTML += `<option value="${day}">${day}</option>`;
+            });
+            startDaySelect.value = scheduleSettings.startDay;
+        }
 
-        // الفصول
+        async function updateSettings(fullReload = true) {
+            scheduleSettings.schoolName = document.getElementById('schoolName').value;
+            scheduleSettings.academicYear = document.getElementById('academicYear').value;
+            scheduleSettings.schedulerName = document.getElementById('schedulerName').value;
+            scheduleSettings.daysCount = parseInt(document.getElementById('daysCount').value, 10);
+            scheduleSettings.periodsCount = parseInt(document.getElementById('periodsCount').value, 10);
+            scheduleSettings.startDay = document.getElementById('startDay').value;
+            scheduleSettings.breakAfterPeriod = parseInt(document.getElementById('breakAfterPeriod').value, 10);
+            scheduleSettings.periodDuration = parseInt(document.getElementById('periodDuration').value, 10);
+            scheduleSettings.startTime = document.getElementById('startTime').value;
+            scheduleSettings.showBreak = document.getElementById('showBreak').checked;
+            scheduleSettings.showTime = document.getElementById('showTime').checked;
+            scheduleSettings.fontSize = document.getElementById('fontSize').value;
+            scheduleSettings.displayStyle = document.getElementById('displayStyle').value;
+            
+            const dayIndex = allPossibleDays.indexOf(scheduleSettings.startDay);
+            scheduleSettings.days = allPossibleDays.slice(dayIndex, dayIndex + scheduleSettings.daysCount);
+
+            await saveSettings();
+            applyVisualSettings();
+            if (fullReload) {
+                renderAllListsAndTables();
+            } else {
+                updatePrintHeaders();
+            }
+        }
+        
+        function applyVisualSettings() {
+            document.documentElement.style.setProperty('--base-font-size', scheduleSettings.fontSize + 'px');
+            document.body.classList.toggle('text-mode', scheduleSettings.displayStyle === 'text');
+        }
+
+        function updatePrintHeaders() {
+            const headerHTML = `
+                <h3>${scheduleSettings.schoolName}</h3>
+                <p><strong>العام الدراسي:</strong> ${scheduleSettings.academicYear} | <strong>مسئول الجدول:</strong> ${scheduleSettings.schedulerName}</p>
+            `;
+            document.querySelectorAll('.schedule-print-header').forEach(header => {
+                header.innerHTML = headerHTML;
+            });
+        }
         function resetClassForm() {
             document.getElementById('addClassForm').reset();
             document.getElementById('editingClassName').value = '';
@@ -730,7 +740,6 @@ const firebaseConfig = {
             });
         }
         
-        // المواد
         function resetSubjectForm() {
             document.getElementById('addSubjectForm').reset();
             document.getElementById('editingSubjectName').value = '';
@@ -808,7 +817,6 @@ const firebaseConfig = {
             });
         }
         
-        // المعلمون
         function openTeacherModal(teacherName) {
             const modal = document.getElementById('teacherEditModal');
             const teacher = allTeachers.find(t => t.name === teacherName);
@@ -944,7 +952,6 @@ const firebaseConfig = {
             });
         }
 
-        // --- إدارة الأنصبة ---
         function toggleCoTeacher() { const container = document.getElementById('coTeacherContainer'); container.style.display = container.style.display === 'none' ? 'block' : 'none'; }
         
         function resetQuotaForm() {
@@ -1087,7 +1094,6 @@ const firebaseConfig = {
             coTeacherSelect.value = currentVal;
         }
 
-        // --- إدارة البطاقات والجدول ---
         const colorPalette = ['#1abc9c', '#3498db', '#9b59b6', '#34495e', '#f1c40f', '#e67e22', '#e74c3c', '#2ecc71', '#95a5a6', '#16a085'];
         const subjectColorMap = new Map(); let nextColorIndex = 0;
         function getSubjectColor(subject) { if (!subjectColorMap.has(subject)) { subjectColorMap.set(subject, colorPalette[nextColorIndex % colorPalette.length]); nextColorIndex++; } return subjectColorMap.get(subject); }
@@ -1141,7 +1147,6 @@ const firebaseConfig = {
             unassignedCards.forEach(card => container.appendChild(createCardElement(card, true)));
         }
 
-        // --- عرض الجداول المختلفة ---
         function switchView(view) {
             document.querySelectorAll('.view-container').forEach(c => c.style.display = 'none');
             document.querySelectorAll('#view-controls button').forEach(b => b.classList.remove('active-view-btn'));
@@ -1266,11 +1271,10 @@ const firebaseConfig = {
                 });
              });
         }
-
+        
         function handleDaySelection(selectedDay) {
             if (userRole !== 'admin' && selectedDay !== scheduleSettings.days[0]) {
                 document.getElementById('paymentModal').style.display = 'block';
-                // Revert selector to the first day
                 document.getElementById('day-selector').value = scheduleSettings.days[0];
             } else {
                 renderDailyView(selectedDay);
@@ -1310,7 +1314,6 @@ const firebaseConfig = {
             });
         }
 
-        // --- التوزيع والسحب والإفلات ---
         async function resetSchedule() { placements = {}; await savePlacements(); renderAllListsAndTables(); }
 
         async function distributeRandomly() {
@@ -1404,23 +1407,20 @@ const firebaseConfig = {
         function dragLeave(ev) { let target = ev.target.closest('td'); if (target) { target.classList.remove('available-slot', 'unavailable-slot', 'conflict-slot'); } }
         function clearAllHighlights() { document.querySelectorAll('.available-slot, .unavailable-slot, .conflict-slot').forEach(el => { el.classList.remove('available-slot', 'unavailable-slot', 'conflict-slot'); }); }
         
-        // --- التصدير والطباعة ---
         function findActiveTableId() {
             if (document.getElementById('class-general-view').style.display === 'block') return 'scheduleTable';
             if (document.getElementById('teacher-general-view').style.display === 'block') return 'teacherScheduleTable';
             if (document.getElementById('daily-view').style.display === 'block') return 'dailyScheduleTable';
-            return 'scheduleTable'; // Default
+            return 'scheduleTable';
         }
 
         function exportActiveTable(format) {
-            if (userRole !== 'admin') {
-                alert('ليس لديك صلاحية التصدير.');
-                return;
-            }
+            if (userRole !== 'admin') { alert('ليس لديك صلاحية التصدير.'); return; }
             const tableId = findActiveTableId();
             const table = document.getElementById(tableId);
             const header = `${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}`;
-            const filename = `${table.closest('.view-container').querySelector('.active-view-btn')?.textContent.trim() || 'جدول'}.`
+            const activeViewButton = document.querySelector('#view-controls .active-view-btn');
+            const filename = `${activeViewButton ? activeViewButton.textContent.trim() : 'جدول'}.`
 
             if (format === 'excel') exportToExcel(table, header, filename + 'xlsx');
             if (format === 'word') exportToWord(table, header, filename + 'doc');
@@ -1473,24 +1473,29 @@ const firebaseConfig = {
             alert('تصدير PDF قيد التطوير حالياً لدعم اللغة العربية بشكل كامل.');
         }
 
-
         function printSchedule() {
             if (userRole !== 'admin') {
                 alert('ليس لديك صلاحية الطباعة.');
                 return;
             }
             const isBw = document.getElementById('printBwCheckbox').checked;
-            if (isBw) {
-                document.body.classList.add('print-bw');
-            }
+            if (isBw) { document.body.classList.add('print-bw'); }
             window.print();
-            setTimeout(() => {
-                if (isBw) {
-                    document.body.classList.remove('print-bw');
-                }
-            }, 500);
+            setTimeout(() => { if (isBw) { document.body.classList.remove('print-bw'); } }, 500);
         }
+        
+        // --- Event listeners at the end of the script ---
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        document.getElementById('signup-form').addEventListener('submit', handleSignup);
+        document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+        document.getElementById('addClassForm').addEventListener('submit', addOrUpdateClass);
+        document.getElementById('addSubjectForm').addEventListener('submit', addOrUpdateSubject);
+        document.getElementById('addTeacherForm').addEventListener('submit', addTeacher);
+        document.getElementById('fontSize').addEventListener('input', (e) => {
+            document.getElementById('fontSizeValue').textContent = e.target.value;
+        });
+
+    });
     </script>
 </body>
 </html>
-
