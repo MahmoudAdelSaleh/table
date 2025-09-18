@@ -238,7 +238,7 @@
                 <input type="password" id="login-password" placeholder="كلمة المرور" required>
                 <button type="submit">دخول</button>
             </form>
-            <p id="auth-toggle" onclick="toggleAuthView(false)">ليس لديك حساب؟ قم بإنشاء حساب جديد</p>
+            <p class="auth-toggle">ليس لديك حساب؟ قم بإنشاء حساب جديد</p>
         </div>
         <div id="signup-view" style="display: none;">
             <h2>إنشاء حساب جديد</h2>
@@ -247,7 +247,7 @@
                 <input type="password" id="signup-password" placeholder="كلمة المرور" required>
                 <button type="submit">إنشاء حساب</button>
             </form>
-            <p id="auth-toggle" onclick="toggleAuthView(true)">لديك حساب بالفعل؟ قم بتسجيل الدخول</p>
+            <p class="auth-toggle">لديك حساب بالفعل؟ قم بتسجيل الدخول</p>
         </div>
         <p id="auth-error" style="color: var(--danger-color); text-align: center;"></p>
     </div>
@@ -293,7 +293,7 @@
                     </div>
                 </div>
                  <div style="text-align: center; margin-top: 20px;">
-                    <button onclick="updateSettings()">حفظ وتطبيق الإعدادات</button>
+                    <button id="updateSettingsBtn">حفظ وتطبيق الإعدادات</button>
                 </div>
             </div>
 
@@ -309,7 +309,7 @@
                             <input type="text" id="newClassName" placeholder="مثال: 1/1" required>
                             <div style="display: flex; gap: 10px; margin-top: 5px;">
                                 <button type="submit" id="addClassBtn" style="flex: 2;">إضافة فصل</button>
-                                <button type="button" class="cancel-btn" id="cancelClassEditBtn" onclick="resetClassForm()" style="flex: 1; display: none;">إلغاء</button>
+                                <button type="button" class="cancel-btn" id="cancelClassEditBtn" style="flex: 1; display: none;">إلغاء</button>
                             </div>
                         </form>
                         <ul id="classesList" class="data-list"></ul>
@@ -324,7 +324,7 @@
                             <input type="number" id="newSubjectPeriods" min="1" value="4" required>
                             <div style="display: flex; gap: 10px; margin-top: 5px;">
                                 <button type="submit" id="addSubjectBtn" style="flex: 2;">إضافة مادة</button>
-                                <button type="button" class="cancel-btn" id="cancelSubjectEditBtn" onclick="resetSubjectForm()" style="flex: 1; display: none;">إلغاء</button>
+                                <button type="button" class="cancel-btn" id="cancelSubjectEditBtn" style="flex: 1; display: none;">إلغاء</button>
                             </div>
                         </form>
                         <ul id="subjectsList" class="data-list"></ul>
@@ -348,15 +348,15 @@
                 <form id="quotaForm" class="form-grid">
                     <input type="hidden" id="quotaId">
                     <div><label for="className">اسم الفصل (اختر فصل أو أكثر)</label><select id="className" required multiple></select></div>
-                    <div><label for="subject">المادة</label><select id="subject" required onchange="filterTeachersBySubject()"></select></div>
+                    <div><label for="subject">المادة</label><select id="subject" required></select></div>
                     <div><label for="teacherName">المعلم الأساسي</label><select id="teacherName" required></select></div>
                     <div id="coTeacherContainer" style="display: none;"><label for="coTeacherName">المعلم المشارك (اختياري)</label><select id="coTeacherName"></select></div>
                     <div><label for="weeklyPeriods">الحصص الأسبوعية</label><input type="number" id="weeklyPeriods" min="1" required placeholder="مثال: 4"></div>
                     <div style="align-self: end; grid-column: 1 / -1;">
                         <div style="display: flex; gap: 10px;">
-                            <button type="button" id="addQuotaBtn" onclick="addOrUpdateQuota()" style="flex: 2;">إضافة نصاب</button>
-                            <button type="button" id="toggleCoTeacherBtn" onclick="toggleCoTeacher()" style="flex: 2;">إضافة معلم مشارك</button>
-                            <button type="button" id="cancelEditBtn" class="cancel-btn" onclick="resetQuotaForm()" style="flex: 1; display: none;">إلغاء</button>
+                            <button type="button" id="addQuotaBtn" style="flex: 2;">إضافة نصاب</button>
+                            <button type="button" id="toggleCoTeacherBtn" style="flex: 2;">إضافة معلم مشارك</button>
+                            <button type="button" id="cancelEditBtn" class="cancel-btn" style="flex: 1; display: none;">إلغاء</button>
                         </div>
                     </div>
                 </form>
@@ -371,14 +371,14 @@
                 <h2>التحكم والتوزيع</h2>
                 <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="distributeRandomly()">توزيع عشوائي</button>
-                        <button onclick="resetSchedule()">إعادة تعيين</button>
+                        <button id="distributeRandomlyBtn">توزيع عشوائي</button>
+                        <button id="resetScheduleBtn">إعادة تعيين</button>
                     </div>
                      <div class="export-options" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                         <button onclick="printSchedule()">طباعة</button>
-                         <button onclick="exportActiveTable('pdf')">PDF</button>
-                         <button onclick="exportActiveTable('excel')">Excel</button>
-                         <button onclick="exportActiveTable('word')">Word</button>
+                         <button id="printBtn">طباعة</button>
+                         <button id="pdfBtn">PDF</button>
+                         <button id="excelBtn">Excel</button>
+                         <button id="wordBtn">Word</button>
                          <div style="display: flex; align-items: center; gap: 5px;">
                              <input type="checkbox" id="printBwCheckbox" style="width: auto;">
                              <label for="printBwCheckbox" style="display: inline;">بدون ألوان</label>
@@ -397,12 +397,12 @@
             <div class="management-section no-print">
                 <h2>عرض الجداول</h2>
                 <div id="view-controls" class="view-controls-grid">
-                    <button onclick="switchView('class-general')" class="active-view-btn">جدول عام للفصول</button>
-                    <button onclick="switchView('teacher-general')">جدول عام للمعلمين</button>
-                    <button onclick="switchView('daily')">جدول يومي</button>
-                    <select id="class-selector" onchange="filterSingleView('class', this.value)" style="display:none;"></select>
-                    <select id="teacher-selector" onchange="filterSingleView('teacher', this.value)" style="display:none;"></select>
-                    <select id="day-selector" onchange="handleDaySelection(this.value)" style="display:none;"></select>
+                    <button class="view-btn active-view-btn" data-view="class-general">جدول عام للفصول</button>
+                    <button class="view-btn" data-view="teacher-general">جدول عام للمعلمين</button>
+                    <button class="view-btn" data-view="daily">جدول يومي</button>
+                    <select id="class-selector" style="display:none;"></select>
+                    <select id="teacher-selector" style="display:none;"></select>
+                    <select id="day-selector" style="display:none;"></select>
                 </div>
             </div>
 
@@ -431,7 +431,7 @@
     <!-- Modals -->
     <div id="teacherEditModal" class="modal">
         <div class="modal-content">
-            <span class="modal-close-btn" onclick="closeTeacherModal()">&times;</span>
+            <span class="modal-close-btn">&times;</span>
             <h3>تعديل بيانات المعلم</h3>
             <div class="data-management-grid" style="grid-template-columns: 1fr 2fr;">
                 <div>
@@ -452,25 +452,25 @@
                 </div>
             </div>
             <div style="text-align: center; margin-top: 20px;">
-                <button onclick="saveTeacherChanges()">حفظ التغييرات</button>
+                <button id="saveTeacherChangesBtn">حفظ التغييرات</button>
             </div>
         </div>
     </div>
 
     <div id="copyQuotaModal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
-            <span class="modal-close-btn" onclick="closeCopyQuotaModal()">&times;</span>
+            <span class="modal-close-btn">&times;</span>
             <h3>نسخ النصاب إلى فصل آخر</h3>
             <input type="hidden" id="quotaToCopyId">
             <label for="copyQuotaTargetClass">اختر الفصل المستهدف</label>
             <select id="copyQuotaTargetClass"></select>
-            <button onclick="confirmCopyQuota()" style="margin-top: 15px;">تأكيد النسخ</button>
+            <button id="confirmCopyQuotaBtn" style="margin-top: 15px;">تأكيد النسخ</button>
         </div>
     </div>
 
     <div id="paymentModal" class="modal">
         <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <span class="modal-close-btn" onclick="closePaymentModal()">&times;</span>
+            <span class="modal-close-btn">&times;</span>
             <h3>الوصول الكامل للبرنامج</h3>
             <p>لعرض باقي أيام الأسبوع والحصول على جميع الميزات، يرجى الاشتراك في النسخة الكاملة.</p>
             <h4>للدفع واشتراك تواصل معنا:</h4>
@@ -480,7 +480,6 @@
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
         // --- ضع معلومات تهيئة Firebase هنا ---
         const firebaseConfig = {
             apiKey: "AIzaSyCJO-P9t196m4lzBPp7EHjQLUhWikIMH3U",
@@ -545,6 +544,7 @@
                 const user = userCredential.user;
                 await db.collection('users').doc(user.uid).set({ email: user.email, role: 'user' });
                 await initializeDefaultUserData(user.uid);
+                // After successful signup, it will trigger onAuthStateChanged to log the user in.
             } catch (error) {
                 document.getElementById('auth-error').textContent = "فشل إنشاء الحساب: " + error.message;
             }
@@ -1150,8 +1150,8 @@
 
         function switchView(view) {
             document.querySelectorAll('.view-container').forEach(c => c.style.display = 'none');
-            document.querySelectorAll('#view-controls button').forEach(b => b.classList.remove('active-view-btn'));
-            document.querySelector(`button[onclick="switchView('${view}')"]`).classList.add('active-view-btn');
+            document.querySelectorAll('#view-controls .view-btn').forEach(b => b.classList.remove('active-view-btn'));
+            document.querySelector(`.view-btn[data-view='${view}']`).classList.add('active-view-btn');
             const classSelector = document.getElementById('class-selector'); const teacherSelector = document.getElementById('teacher-selector'); const daySelector = document.getElementById('day-selector');
             classSelector.style.display = 'none'; teacherSelector.style.display = 'none'; daySelector.style.display = 'none';
             if (view === 'class-general') { document.getElementById('class-general-view').style.display = 'block'; classSelector.style.display = 'inline-block'; filterSingleView('class', classSelector.value); } 
@@ -1528,7 +1528,36 @@
             document.getElementById('fontSizeValue').textContent = e.target.value;
         });
 
+        // Event listeners for buttons
+        document.getElementById('updateSettingsBtn').addEventListener('click', updateSettings);
+        document.getElementById('cancelClassEditBtn').addEventListener('click', resetClassForm);
+        document.getElementById('cancelSubjectEditBtn').addEventListener('click', resetSubjectForm);
+        document.getElementById('addQuotaBtn').addEventListener('click', addOrUpdateQuota);
+        document.getElementById('toggleCoTeacherBtn').addEventListener('click', toggleCoTeacher);
+        document.getElementById('cancelEditBtn').addEventListener('click', resetQuotaForm);
+        document.getElementById('distributeRandomlyBtn').addEventListener('click', distributeRandomly);
+        document.getElementById('resetScheduleBtn').addEventListener('click', resetSchedule);
+        document.getElementById('printBtn').addEventListener('click', printSchedule);
+        document.getElementById('pdfBtn').addEventListener('click', () => exportActiveTable('pdf'));
+        document.getElementById('excelBtn').addEventListener('click', () => exportActiveTable('excel'));
+        document.getElementById('wordBtn').addEventListener('click', () => exportActiveTable('word'));
+        document.getElementById('saveTeacherChangesBtn').addEventListener('click', saveTeacherChanges);
+        document.getElementById('confirmCopyQuotaBtn').addEventListener('click', confirmCopyQuota);
+
+        document.querySelectorAll('.auth-toggle').forEach(el => el.addEventListener('click', () => toggleAuthView(el.parentElement.id === 'signup-view')));
+        document.querySelectorAll('.modal-close-btn').forEach(el => {
+            el.addEventListener('click', () => {
+                el.closest('.modal').style.display = 'none';
+            });
+        });
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchView(btn.dataset.view));
+        });
+        document.getElementById('class-selector').addEventListener('change', (e) => filterSingleView('class', e.target.value));
+        document.getElementById('teacher-selector').addEventListener('change', (e) => filterSingleView('teacher', e.target.value));
+        document.getElementById('day-selector').addEventListener('change', (e) => handleDaySelection(e.target.value));
+        document.getElementById('subject').addEventListener('change', filterTeachersBySubject);
     });
     </script>
 </body>
-</html>
+</html>  
