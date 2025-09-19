@@ -1539,101 +1539,117 @@
             });
             container.appendChild(table);
         }
+     function renderSingleClassView(className) {
+    const container = document.getElementById('single-class-view').querySelector('.main-schedule-container');
+    container.innerHTML = '';
+    const printHeader = document.getElementById('single-class-view').querySelector('.schedule-print-header');
+    printHeader.innerHTML = `<h3>جدول فصل: ${className}</h3><p>${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}</p>`;
 
-        function renderSingleClassView(className) {
-            const container = document.getElementById('single-class-view').querySelector('.main-schedule-container');
-            container.innerHTML = ''; 
-            const printHeader = document.getElementById('single-class-view').querySelector('.schedule-print-header');
-            printHeader.innerHTML = `<h3>جدول فصل: ${className}</h3><p>${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}</p>`;
+    const table = document.createElement('table');
+    table.id = 'singleClassScheduleTable';
+    const head = table.createTHead();
+    const body = table.createTBody();
 
-            const table = document.createElement('table');
-            table.id = 'singleClassScheduleTable';
-            const head = table.createTHead();
-            const body = table.createTBody();
-
-            const headerRow = head.insertRow();
-            headerRow.insertCell().textContent = 'اليوم';
-            for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
-                if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
-                    headerRow.insertCell().textContent = 'فسحة';
-                }
-                headerRow.insertCell().textContent = `الحصة ${i}`;
-            }
-
-            scheduleSettings.days.forEach(day => {
-                const row = body.insertRow();
-                row.insertCell().textContent = day;
-                for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
-                    if (scheduleSettings.showBreak && period === scheduleSettings.breakAfterPeriod + 1) {
-                        row.insertCell().style.backgroundColor = '#ddd';
-                    }
-                    const cell = row.insertCell();
-                    const placementKey = Object.keys(placements).find(cardId => {
-                        const p = placements[cardId];
-                        const card = cards.find(c => c.id === cardId);
-                        return card && card.classNames.includes(className) && p.day === day && p.period == period;
-                    });
-                    if (placementKey) {
-                        const cardData = cards.find(c => c.id === placementKey);
-                        if (cardData) {
-                            const cardEl = createCardElement(cardData);
-                            cardEl.draggable = false;
-                            cell.appendChild(cardEl);
-                        }
-                    }
-                }
-            });
-            container.appendChild(table);
+    const headerRow = head.insertRow();
+    headerRow.insertCell().textContent = 'اليوم';
+    for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+        if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
+            headerRow.insertCell().textContent = 'فسحة';
         }
+        headerRow.insertCell().textContent = `الحصة ${i}`;
+    }
 
-        function renderSingleTeacherView(teacherName) {
-            const container = document.getElementById('single-teacher-view').querySelector('.main-schedule-container');
-            container.innerHTML = '';
-            const printHeader = document.getElementById('single-teacher-view').querySelector('.schedule-print-header');
-            printHeader.innerHTML = `<h3>جدول المعلم: ${teacherName}</h3><p>${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}</p>`;
-            
-            const table = document.createElement('table');
-            table.id = 'singleTeacherScheduleTable';
-            const head = table.createTHead();
-            const body = table.createTBody();
-
-            const headerRow = head.insertRow();
-            headerRow.insertCell().textContent = 'اليوم';
-            for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
-                if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
-                    headerRow.insertCell().textContent = 'فسحة';
-                }
-                headerRow.insertCell().textContent = `الحصة ${i}`;
+    scheduleSettings.days.forEach(day => {
+        const row = body.insertRow();
+        row.insertCell().textContent = day;
+        for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
+            if (scheduleSettings.showBreak && period === scheduleSettings.breakAfterPeriod + 1) {
+                row.insertCell().style.backgroundColor = '#ddd';
             }
-
-            scheduleSettings.days.forEach(day => {
-                const row = body.insertRow();
-                row.insertCell().textContent = day;
-                for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
-                    if (scheduleSettings.showBreak && period === scheduleSettings.breakAfterPeriod + 1) {
-                        row.insertCell().style.backgroundColor = '#ddd';
-                    }
-                    const cell = row.insertCell();
-                    const placementKey = Object.keys(placements).find(cardId => {
-                        const p = placements[cardId];
-                        const card = cards.find(c => c.id === cardId);
-                        const quota = card ? quotas.find(q => q.id === card.quotaId) : null;
-                        return quota && quota.teacherNames.includes(teacherName) && p.day === day && p.period == period;
-                    });
-                    if (placementKey) {
-                        const cardData = cards.find(c => c.id === placementKey);
-                        if (cardData) {
-                            const cardEl = createCardElement(cardData);
-                            cardEl.innerHTML = `${cardData.content.split('<br><b>')[0]}<br><b>(${cardData.classNames.join(', ')})</b>`;
-                            cardEl.draggable = false;
-                            cell.appendChild(cardEl);
-                        }
-                    }
-                }
+            const cell = row.insertCell();
+            const placementKey = Object.keys(placements).find(cardId => {
+                const p = placements[cardId];
+                const card = cards.find(c => c.id === cardId);
+                return card && card.classNames.includes(className) && p.day === day && p.period == period;
             });
+            if (placementKey) {
+                const cardData = cards.find(c => c.id === placementKey);
+                if (cardData) {
+                    const cardEl = createCardElement(cardData);
+                    // ▼▼▼ هذا هو الجزء الذي تم إصلاحه ▼▼▼
+                    // نعيد بناء المحتوى هنا بدون اسم الفصل
+                    cardEl.innerHTML = `${cardData.subject}<br><small>${cardData.teacherNames.join(' و ')}</small>`;
+                    cardEl.draggable = false;
+                    cell.appendChild(cardEl);
 
-            container.appendChild(table);
+                    const textElement = document.createElement('div');
+                    textElement.className = 'text-display';
+                    textElement.innerHTML = cardEl.innerHTML;
+                    textElement.style.backgroundColor = cardData.color;
+                    cell.appendChild(textElement);
+                }
+            }
         }
+    });
+    container.appendChild(table);
+}
+
+function renderSingleTeacherView(teacherName) {
+    const container = document.getElementById('single-teacher-view').querySelector('.main-schedule-container');
+    container.innerHTML = '';
+    const printHeader = document.getElementById('single-teacher-view').querySelector('.schedule-print-header');
+    printHeader.innerHTML = `<h3>جدول المعلم: ${teacherName}</h3><p>${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}</p>`;
+
+    const table = document.createElement('table');
+    table.id = 'singleTeacherScheduleTable';
+    const head = table.createTHead();
+    const body = table.createTBody();
+
+    const headerRow = head.insertRow();
+    headerRow.insertCell().textContent = 'اليوم';
+    for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+        if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
+            headerRow.insertCell().textContent = 'فسحة';
+        }
+        headerRow.insertCell().textContent = `الحصة ${i}`;
+    }
+
+    scheduleSettings.days.forEach(day => {
+        const row = body.insertRow();
+        row.insertCell().textContent = day;
+        for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
+            if (scheduleSettings.showBreak && period === scheduleSettings.breakAfterPeriod + 1) {
+                row.insertCell().style.backgroundColor = '#ddd';
+            }
+            const cell = row.insertCell();
+            const placementKey = Object.keys(placements).find(cardId => {
+                const p = placements[cardId];
+                const card = cards.find(c => c.id === cardId);
+                const quota = card ? quotas.find(q => q.id === card.quotaId) : null;
+                return quota && quota.teacherNames.includes(teacherName) && p.day === day && p.period == period;
+            });
+            if (placementKey) {
+                const cardData = cards.find(c => c.id === placementKey);
+                if (cardData) {
+                    const cardEl = createCardElement(cardData);
+                    // ▼▼▼ هذا هو الجزء الذي تم إصلاحه ▼▼▼
+                    // نعيد بناء المحتوى هنا مع اسم الفصل لأنه مهم في جدول المعلم
+                    cardEl.innerHTML = `${cardData.subject}<br><small>${cardData.teacherNames.join(' و ')}</small><br><b>(${cardData.classNames.join(', ')})</b>`;
+                    cardEl.draggable = false;
+                    cell.appendChild(cardEl);
+
+                    const textElement = document.createElement('div');
+                    textElement.className = 'text-display';
+                    textElement.innerHTML = cardEl.innerHTML;
+                    textElement.style.backgroundColor = cardData.color;
+                    cell.appendChild(textElement);
+                }
+            }
+        }
+    });
+
+    container.appendChild(table);
+}
 
         async function resetSchedule() {
             placements = {}; 
