@@ -676,24 +676,33 @@
         }
 
         async function loadUserData() {
-            if (!currentUser) return;
-            const dataCollections = ['classes', 'subjects', 'teachers', 'quotas', 'placements', 'settings'];
-            const promises = dataCollections.map(col => db.collection('users').doc(currentUser.uid).collection('data').doc(col).get());
-            const [classesDoc, subjectsDoc, teachersDoc, quotasDoc, placementsDoc, settingsDoc] = await Promise.all(promises);
+    if (!currentUser) return;
+    console.log("1. Starting to load user data..."); // نقطة التتبع الأولى
 
-            allClasses = classesDoc.exists ? classesDoc.data().list : [];
-            allSubjects = subjectsDoc.exists ? subjectsDoc.data().list : [];
-            allTeachers = teachersDoc.exists ? teachersDoc.data().list : [];
-            quotas = quotasDoc.exists ? quotasDoc.data().list : [];
-            placements = placementsDoc.exists ? placementsDoc.data() : {};
-            scheduleSettings = settingsDoc.exists ? settingsDoc.data() : {
-                schoolName: 'مدرستي الابتدائية', academicYear: '2025-2026', schedulerName: 'مسئول الجدول',
-                daysCount: 5, periodsCount: 7, startDay: 'الأحد', breakAfterPeriod: 4,
-                periodDuration: 45, startTime: '08:00', showBreak: true, showTime: true,
-                fontSize: 14, displayStyle: 'cards',
-                firstColumnWidth: 100, dataColumnWidth: 85, dataRowHeight: 85
-            }; 
-        }
+    const dataCollections = ['classes', 'subjects', 'teachers', 'quotas', 'placements', 'settings'];
+    const promises = dataCollections.map(col => db.collection('users').doc(currentUser.uid).collection('data').doc(col).get());
+    const [classesDoc, subjectsDoc, teachersDoc, quotasDoc, placementsDoc, settingsDoc] = await Promise.all(promises);
+
+    console.log("2. Fetched 'classes' document from Firestore. Does it exist?", classesDoc.exists); // نقطة التتبع الثانية
+    if (classesDoc.exists) {
+        console.log("3. Data inside 'classes' document:", classesDoc.data()); // نقطة التتبع الثالثة
+    }
+
+    allClasses = classesDoc.exists ? classesDoc.data().list : [];
+    allSubjects = subjectsDoc.exists ? subjectsDoc.data().list : [];
+    allTeachers = teachersDoc.exists ? teachersDoc.data().list : [];
+    quotas = quotasDoc.exists ? quotasDoc.data().list : [];
+    placements = placementsDoc.exists ? placementsDoc.data() : {};
+    scheduleSettings = settingsDoc.exists ? settingsDoc.data() : {
+        schoolName: 'مدرستي الابتدائية', academicYear: '2025-2026', schedulerName: 'مسئول الجدول',
+        daysCount: 5, periodsCount: 7, startDay: 'الأحد', breakAfterPeriod: 4,
+        periodDuration: 45, startTime: '08:00', showBreak: true, showTime: true,
+        fontSize: 14, displayStyle: 'cards',
+        firstColumnWidth: 100, dataColumnWidth: 85, dataRowHeight: 85
+    };
+
+    console.log("4. 'allClasses' variable is now:", allClasses); // نقطة التتبع الرابعة
+}
 
         function renderAllListsAndTables(){
             generateCards();
@@ -1196,6 +1205,7 @@
         }
 
         function populateDropdowns() {
+            console.log("5. Trying to populate dropdowns. 'allClasses' variable is:", allClasses); // نقطة التتبع الخامسة
             const classSelect = document.getElementById('className');
             classSelect.innerHTML = '';
             allClasses.forEach(c => classSelect.innerHTML += `<option value="${c}">${c}</option>`);
