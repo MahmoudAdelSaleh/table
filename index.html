@@ -704,31 +704,26 @@
     console.log("4. 'allClasses' variable is now:", allClasses); // نقطة التتبع الرابعة
 }
 
-        function renderAllListsAndTables(){
-            generateCards();
-            renderClassesList();
-            renderSubjectsList();
-            renderTeachersList();
-            populateSelectors();
-            renderQuotaTable();
-            renderTeacherStats();
-            // Determine which view is active and render it
-            const activeBtn = document.querySelector('.view-btn.active-view-btn');
-            const activeView = activeBtn ? activeBtn.dataset.view : 'class-general';
-            const classSelectorValue = document.getElementById('class-selector').value;
-            const teacherSelectorValue = document.getElementById('teacher-selector').value;
+        function renderAllListsAndTables() {
+    // 1. نرسم كل شيء كالعادة...
+    generateCards();
+    renderClassesList();
+    renderSubjectsList();
+    renderTeachersList();
+    // populateDropdowns(); // << سنقوم بتعطيلها من هنا
+    renderQuotaTable();
+    renderGeneralClassView();
+    renderGeneralTeacherView();
+    renderDailyView(document.getElementById('day-selector')?.value || (scheduleSettings.days ? scheduleSettings.days[0] : ''));
+    renderUnassignedCards();
+    updatePrintHeaders();
 
-            if (activeView === 'class-general' && classSelectorValue) {
-                filterSingleView('class', classSelectorValue);
-            } else if (activeView === 'teacher-general' && teacherSelectorValue) {
-                filterSingleView('teacher', teacherSelectorValue);
-            } else {
-                switchView(activeView);
-            }
-            
-            renderUnassignedCards();
-            updatePrintHeaders();
-        }
+    // 2. ... ثم نؤجل ملء القوائم المنسدلة إلى آخر لحظة ممكنة
+    setTimeout(function() {
+        console.log("Now, for real, populating the dropdowns!");
+        populateDropdowns();
+    }, 0); // التأخير صفر يعني "نفذ هذا بمجرد أن تنتهي من كل شيء آخر"
+}
 
         function initializeSettingsForm() {
             document.getElementById('schoolName').value = scheduleSettings.schoolName;
