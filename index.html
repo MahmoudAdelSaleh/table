@@ -1881,33 +1881,50 @@
         }
         
         // --- Event listeners Setup ---
-        auth.onAuthStateChanged(async user => {
-            const authContainer = document.getElementById('auth-container');
-            const appContainer = document.getElementById('app-container');
+        // استبدل الوظيفة القديمة بهذه النسخة المحسّنة
+auth.onAuthStateChanged(async user => {
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
 
-            if (user) {
-                currentUser = user;
-                document.getElementById('user-email').textContent = user.email;
+    if (user) {
+        try {
+            currentUser = user;
+            document.getElementById('user-email').textContent = user.email;
 
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists) {
-                    userRole = userDoc.data().role || 'user';
-                }
-
-                await loadUserData();
-                initializeSettingsForm();
-                updateSettings(true); 
-                
-                authContainer.style.display = 'none';
-                appContainer.style.display = 'block';
-
-            } else {
-                currentUser = null;
-                userRole = 'user';
-                authContainer.style.display = 'block';
-                appContainer.style.display = 'none';
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (userDoc.exists) {
+                userRole = userDoc.data().role || 'user';
             }
-        });
+            
+            // سنستدعي الوظائف التي تحتوي على console.log
+            await loadUserData();
+            
+            console.log("About to initialize settings form...");
+            initializeSettingsForm();
+            
+            console.log("About to update settings and render tables...");
+            updateSettings(true); 
+            console.log("Finished rendering everything successfully!");
+
+            authContainer.style.display = 'none';
+            appContainer.style.display = 'block';
+
+            const exportControls = document.querySelector('.export-options');
+            if (exportControls) {
+                exportControls.style.display = userRole === 'admin' ? 'flex' : 'none';
+            }
+        } catch (error) {
+            // هذا السطر سيظهر أي خطأ خفي ويخبرنا بالسبب
+            console.error("AN ERROR OCCURRED! The problem is here:", error);
+        }
+
+    } else {
+        currentUser = null;
+        userRole = 'user';
+        authContainer.style.display = 'block';
+        appContainer.style.display = 'none';
+    }
+});
         document.getElementById('login-form').addEventListener('submit', handleLogin);
         document.getElementById('signup-form').addEventListener('submit', handleSignup);
         document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
