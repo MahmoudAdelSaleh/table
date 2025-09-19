@@ -162,7 +162,7 @@
             text-align: center; overflow: hidden; white-space: normal;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             width: 90%; height: 90%; box-sizing: border-box; padding: 2px;
-            font-size: 0.75em; line-height: 1.2;
+            font-size: var(--base-font-size); line-height: 1.2;
             transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.3s;
         }
         .unassigned-card {
@@ -196,7 +196,6 @@
         .icon-btn svg { width: 24px; height: 24px; fill: white; }
 
         .view-container { display: none; }
-
         .active-view-btn { background-color: #2980b9; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
 
         .schedule-print-header { display: none; text-align: center; margin-bottom: 20px; }
@@ -205,12 +204,12 @@
         
         .day-divider { border-right: 3px solid var(--secondary-color) !important; }
 
-        .text-display { display: none; }
+        .text-display { display: none; font-size: var(--base-font-size); }
         
         body.text-mode .card { display: none; }
         body.text-mode .text-display {
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            width: 100%; height: 100%; font-size: 0.8em; line-height: 1.2;
+            width: 100%; height: 100%; line-height: 1.2;
             text-align: center; word-wrap: break-word; color: black;
         }
 
@@ -248,6 +247,21 @@
         .toggle-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .toggle-icon { font-size: 1.5em; font-weight: bold; }
         .quota-table-container { max-height: 520px; overflow-y: auto; }
+        #teacher-stats ul { list-style-type: none; padding: 0; column-count: 3; }
+
+        .action-buttons-group, .export-buttons-group { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .action-buttons-group button, .export-buttons-group button { flex: 1; min-width: 120px; }
+        .action-buttons-group button:nth-child(1) { background-color: var(--success-color); }
+        .action-buttons-group button:nth-child(2) { background-color: var(--warning-color); }
+        .action-buttons-group button:nth-child(3) { background-color: var(--copy-color); }
+        .export-buttons-group button:nth-child(1) { background-color: #1e3a59; }
+        .export-buttons-group button:nth-child(2) { background-color: #c0392b; }
+        .export-buttons-group button:nth-child(3) { background-color: #27ae60; }
+        .export-buttons-group button:nth-child(4) { background-color: #2980b9; }
+
+        .table-display-options { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: center; margin-top: 10px; }
+        .table-display-options .option-group { display: flex; gap: 5px; align-items: center; }
+        .table-display-options button { padding: 5px 10px; font-size: 0.9em; width: auto; }
         
         @media (max-width: 768px) {
             .data-management-grid { grid-template-columns: 1fr; }
@@ -256,6 +270,7 @@
             .container { padding: 15px; }
             h1 { font-size: 1.5em; }
             h2 { font-size: 1.2em; }
+            #teacher-stats ul { column-count: 1; }
         }
 
         @media print {
@@ -317,25 +332,6 @@
                     <div><label for="breakAfterPeriod">فسحة بعد الحصة رقم</label><input type="number" id="breakAfterPeriod" min="0"></div>
                     <div><label for="periodDuration">مدة الحصة (دقيقة)</label><input type="number" id="periodDuration" min="1"></div>
                     <div><label for="startTime">وقت بدء اليوم الدراسي</label><input type="time" id="startTime"></div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="showBreak" style="width: auto; height: auto;">
-                        <label for="showBreak" style="margin: 0;">إظهار الفسحة</label>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="showTime" style="width: auto; height: auto;">
-                        <label for="showTime" style="margin: 0;">إظهار الوقت</label>
-                    </div>
-                    <div>
-                        <label for="fontSize">حجم الخط: <span id="fontSizeValue">14</span>px</label>
-                        <input type="range" id="fontSize" min="10" max="20" step="1">
-                    </div>
-                    <div>
-                        <label for="displayStyle">نمط العرض</label>
-                        <select id="displayStyle">
-                            <option value="cards">بطاقات</option>
-                            <option value="text">نص فقط</option>
-                        </select>
-                    </div>
                 </div>
                  <div style="text-align: center; margin-top: 20px;">
                     <button id="updateSettingsBtn">حفظ وتطبيق الإعدادات</button>
@@ -415,31 +411,10 @@
                             <tbody></tbody>
                         </table>
                     </div>
+                    <div id="teacher-stats" style="margin-top: 20px; padding: 10px; background-color: #fff; border-radius: 6px;"></div>
                 </div>
             </div>
             
-            <!-- قسم التحكم والتوزيع -->
-            <div class="management-section no-print">
-                <h2>التحكم والتوزيع</h2>
-                <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button id="distributeRandomlyBtn">توزيع عشوائي</button>
-                        <button id="resetScheduleBtn">إعادة تعيين</button>
-                        <button id="toggleColorsBtn">إخفاء/إظهار الألوان</button>
-                    </div>
-                     <div class="export-options" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                         <button id="printBtn">طباعة</button>
-                         <button id="pdfBtn">PDF</button>
-                         <button id="excelBtn">Excel</button>
-                         <button id="wordBtn">Word</button>
-                         <div style="display: flex; align-items: center; gap: 5px;">
-                             <input type="checkbox" id="printBwCheckbox" style="width: auto;">
-                             <label for="printBwCheckbox" style="display: inline;">بدون ألوان</label>
-                         </div>
-                     </div>
-                </div>
-            </div>
-
             <!-- قسم الحصص غير الموزعة -->
             <div class="management-section no-print">
                  <h2>حصص غير موزعة (اسحبها للجدول)</h2>
@@ -473,7 +448,29 @@
                     <div style="flex: 1; min-width: 150px;"><label for="firstColumnWidth">عرض العمود 1 (px)</label><input type="number" id="firstColumnWidth" min="50"></div>
                     <div style="flex: 1; min-width: 150px;"><label for="dataColumnWidth">عرض الأعمدة (px)</label><input type="number" id="dataColumnWidth" min="50"></div>
                     <div style="flex: 1; min-width: 150px;"><label for="dataRowHeight">ارتفاع الصفوف (px)</label><input type="number" id="dataRowHeight" min="50"></div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label for="fontSize">حجم الخط: <span id="fontSizeValue">14</span>px</label>
+                        <input type="range" id="fontSize" min="10" max="50" step="1">
+                    </div>
                 </div>
+                 <div class="table-display-options">
+                    <div class="option-group">
+                        <label>إعدادات العرض:</label>
+                        <button id="toggleBreakBtn">الفسحة</button>
+                        <button id="toggleTimeBtn">الوقت</button>
+                    </div>
+                    <div class="option-group">
+                        <label>نمط العرض:</label>
+                        <button data-style="cards" class="display-style-btn">بطاقات</button>
+                        <button data-style="text" class="display-style-btn">نص</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;" class="action-buttons-group">
+                <button id="distributeRandomlyBtn">توزيع عشوائي</button>
+                <button id="resetScheduleBtn">إعادة تعيين</button>
+                <button id="toggleColorsBtn">إخفاء/إظهار الألوان</button>
             </div>
 
             <!-- حاويات الجداول -->
@@ -509,6 +506,17 @@
                     <table id="dailyScheduleTable"><thead></thead><tbody></tbody></table>
                 </div>
             </div>
+
+            <div class="export-buttons-group" style="margin-top: 20px;">
+                 <button id="printBtn">طباعة</button>
+                 <button id="pdfBtn">PDF</button>
+                 <button id="excelBtn">Excel</button>
+                 <button id="wordBtn">Word</button>
+                 <div style="display: flex; align-items: center; justify-content:center; gap: 5px; min-width: 120px;">
+                     <input type="checkbox" id="printBwCheckbox" style="width: auto; margin-top: 0;">
+                     <label for="printBwCheckbox" style="margin: 0;">بدون ألوان</label>
+                 </div>
+             </div>
         </div>
     </div>
     
@@ -556,18 +564,18 @@
         <div class="modal-content" style="max-width: 500px; text-align: center;">
             <span class="modal-close-btn">&times;</span>
             <h3>الوصول الكامل للبرنامج</h3>
-            <p>لعرض باقي أيام الأسبوع والحصول على جميع الميزات، يرجى الاشتراك في النسخة الكاملة.</p>
-            <h4>للدفع واشتراك تواصل معنا:</h4>
+            <p>لعرض بقية أيام الأسبوع وبقية الفصول وبقية المعلمين والحصول على جميع الميزات، يرجى الاشتراك في النسخة الكاملة.</p>
+            <h4>للدفع والإشتراك تواصل معنا:</h4>
             <div style="margin: 15px 0;">
                 <strong>Instapay</strong>
-                <p>امسح الكود التالي للدفع</p>
+                <p> امسح الكود التالي للدفع ولا تنسى إرسال الإيصال عبر الواتساب </p>
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://ipn.eg/S/mahmoud79070/instapay/6qDwHfn" alt="Instapay QR Code">
                 <p><a href="https://ipn.eg/S/mahmoud79070/instapay/6qDwHfn" target="_blank">أو اضغط هنا للدفع</a></p>
             </div>
             <div style="margin: 15px 0;">
                 <a id="whatsapp-link" href="https://wa.me/201552402912?text=%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D8%A7%D9%84%D9%86%D8%B3%D8%AE%D8%A9%20%D8%A7%D9%84%D9%83%D8%A7%D9%85%D9%84%D8%A9%20%D9%84%D8%A8%D8%B1%D9%86%D8%A7%D9%85%D8%AC%20%D9%85%D9%86%D8%B8%D9%85%20%D8%AC%D8%AF%D9%88%D9%84%20%D8%A7%D9%84%D8%AD%D8%B5%D8%B5." target="_blank" style="text-decoration: none; color: #25D366; font-size: 1.2em; display: inline-flex; align-items: center; gap: 8px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91c0-5.46-4.45-9.91-9.91-9.91M17.5 14.3c-.27-.14-1.59-.78-1.84-.88c-.25-.09-.43-.14-.61.14c-.18.28-.69.88-.85 1.06c-.15.18-.3.2-.56.07c-.26-.14-1.11-.41-2.11-1.3c-.78-.69-1.3-1.54-1.46-1.8c-.16-.28-.01-.43.12-.56c.12-.12.27-.3.4-.46c.14-.15.18-.25.27-.42c.09-.17.05-.31-.02-.45c-.07-.14-.61-1.47-.84-2.01c-.23-.54-.46-.47-.61-.47c-.15 0-.33-.02-.51-.02c-.18 0-.48.07-.73.35c-.25.28-.97.94-.97 2.3c0 1.36 1 2.66 1.14 2.84c.14.18 1.97 3.01 4.79 4.22c.69.29 1.23.47 1.65.6c.71.22 1.36.19 1.88.11c.57-.08 1.59-.65 1.81-1.29c.23-.64.23-1.18.16-1.3c-.07-.12-.25-.2-.51-.34"/></svg>
-                    <span>تواصل عبر واتساب</span>
+                    <span>تواصل معنا عبر واتساب</span>
                 </a>
             </div>
         </div>
@@ -692,11 +700,23 @@
             renderClassesList();
             renderSubjectsList();
             renderTeachersList();
-            populateDropdowns();
+            populateSelectors();
             renderQuotaTable();
-            renderGeneralClassView();
-            renderGeneralTeacherView();
-            renderDailyView(document.getElementById('day-selector')?.value || (scheduleSettings.days ? scheduleSettings.days[0] : ''));
+            renderTeacherStats();
+            // Determine which view is active and render it
+            const activeBtn = document.querySelector('.view-btn.active-view-btn');
+            const activeView = activeBtn ? activeBtn.dataset.view : 'class-general';
+            const classSelectorValue = document.getElementById('class-selector').value;
+            const teacherSelectorValue = document.getElementById('teacher-selector').value;
+
+            if (activeView === 'class-general' && classSelectorValue) {
+                filterSingleView('class', classSelectorValue);
+            } else if (activeView === 'teacher-general' && teacherSelectorValue) {
+                filterSingleView('teacher', teacherSelectorValue);
+            } else {
+                switchView(activeView);
+            }
+            
             renderUnassignedCards();
             updatePrintHeaders();
         }
@@ -710,11 +730,9 @@
             document.getElementById('breakAfterPeriod').value = scheduleSettings.breakAfterPeriod;
             document.getElementById('periodDuration').value = scheduleSettings.periodDuration;
             document.getElementById('startTime').value = scheduleSettings.startTime;
-            document.getElementById('showBreak').checked = scheduleSettings.showBreak;
-            document.getElementById('showTime').checked = scheduleSettings.showTime;
-            document.getElementById('fontSize').value = scheduleSettings.fontSize;
-            document.getElementById('fontSizeValue').textContent = scheduleSettings.fontSize;
-            document.getElementById('displayStyle').value = scheduleSettings.displayStyle;
+            
+            document.getElementById('fontSize').value = scheduleSettings.fontSize || 14;
+            document.getElementById('fontSizeValue').textContent = scheduleSettings.fontSize || 14;
             document.getElementById('firstColumnWidth').value = scheduleSettings.firstColumnWidth || 100;
             document.getElementById('dataColumnWidth').value = scheduleSettings.dataColumnWidth || 85;
             document.getElementById('dataRowHeight').value = scheduleSettings.dataRowHeight || 85;
@@ -737,10 +755,11 @@
             scheduleSettings.breakAfterPeriod = parseInt(document.getElementById('breakAfterPeriod').value, 10);
             scheduleSettings.periodDuration = parseInt(document.getElementById('periodDuration').value, 10);
             scheduleSettings.startTime = document.getElementById('startTime').value;
-            scheduleSettings.showBreak = document.getElementById('showBreak').checked;
-            scheduleSettings.showTime = document.getElementById('showTime').checked;
-            scheduleSettings.fontSize = document.getElementById('fontSize').value;
-            scheduleSettings.displayStyle = document.getElementById('displayStyle').value;
+            // These are now handled by buttons, not read from here
+            // scheduleSettings.showBreak = document.getElementById('showBreak').checked;
+            // scheduleSettings.showTime = document.getElementById('showTime').checked;
+            // scheduleSettings.displayStyle = document.getElementById('displayStyle').value;
+            scheduleSettings.fontSize = parseInt(document.getElementById('fontSize').value, 10);
             scheduleSettings.firstColumnWidth = parseInt(document.getElementById('firstColumnWidth').value, 10);
             scheduleSettings.dataColumnWidth = parseInt(document.getElementById('dataColumnWidth').value, 10);
             scheduleSettings.dataRowHeight = parseInt(document.getElementById('dataRowHeight').value, 10);
@@ -759,10 +778,17 @@
         
         function applyVisualSettings() {
             const root = document.documentElement;
-            root.style.setProperty('--base-font-size', scheduleSettings.fontSize + 'px');
+            root.style.setProperty('--base-font-size', (scheduleSettings.fontSize || 14) + 'px');
             root.style.setProperty('--first-column-width', (scheduleSettings.firstColumnWidth || 100) + 'px');
             root.style.setProperty('--data-column-width', (scheduleSettings.dataColumnWidth || 85) + 'px');
             root.style.setProperty('--data-row-height', (scheduleSettings.dataRowHeight || 85) + 'px');
+            
+            // Update button states
+            document.querySelector('#toggleBreakBtn').classList.toggle('active-view-btn', scheduleSettings.showBreak);
+            document.querySelector('#toggleTimeBtn').classList.toggle('active-view-btn', scheduleSettings.showTime);
+            document.querySelectorAll('.display-style-btn').forEach(btn => {
+                btn.classList.toggle('active-view-btn', btn.dataset.style === scheduleSettings.displayStyle);
+            });
             document.body.classList.toggle('text-mode', scheduleSettings.displayStyle === 'text');
         }
 
@@ -1267,6 +1293,11 @@
                 document.getElementById('class-selector').value = "";
                 filterSingleView('class', '');
             } else if (view === 'teacher-general') {
+                if (userRole !== 'admin') {
+                    document.getElementById('paymentModal').style.display = 'block';
+                    switchView('class-general'); // Revert to a free view
+                    return;
+                }
                 document.getElementById('teacher-selector').value = "";
                 filterSingleView('teacher', '');
             } else if (view === 'daily') {
@@ -1289,6 +1320,13 @@
                 if(type === 'class') renderGeneralClassView();
                 else renderGeneralTeacherView();
             } else {
+                 if (userRole !== 'admin') {
+                    document.getElementById('paymentModal').style.display = 'block';
+                    if (type === 'class') document.getElementById('class-selector').value = "";
+                    else document.getElementById('teacher-selector').value = "";
+                    document.getElementById(generalViewId).style.display = 'block'; // Show general view again
+                    return;
+                }
                 document.getElementById(singleViewId).style.display = 'block';
                 if (type === 'class') {
                     renderSingleClassView(value);
@@ -1356,18 +1394,22 @@
             
             const teacherSelector = document.getElementById('teacher-selector'); 
             teacherSelector.innerHTML = '<option value="">اختر معلم...</option>';
-            allTeachers.forEach(t => teacherSelector.innerHTML += `<option value="${t.name}">${t.name}</option>`);
+            const teachersToRender = userRole === 'admin' ? allTeachers : allTeachers.slice(0, 1);
+            teachersToRender.forEach(t => teacherSelector.innerHTML += `<option value="${t.name}">${t.name}</option>`);
 
             const daySelector = document.getElementById('day-selector'); 
             daySelector.innerHTML = '';
-            scheduleSettings.days.forEach(d => daySelector.innerHTML += `<option value="${d}">${d}</option>`);
+            const daysToRender = userRole === 'admin' ? scheduleSettings.days : (scheduleSettings.days ? scheduleSettings.days.slice(0, 1) : []);
+            daysToRender.forEach(d => daySelector.innerHTML += `<option value="${d}">${d}</option>`);
         }
         
         function renderGeneralClassView() {
             const table = document.querySelector("#scheduleTable"); const body = table.tBodies[0]; createTableHeader(table, { main: 'الفصل/اليوم', sub: 'الحصة' }); body.innerHTML = "";
-            populateSelectors();
-            if (allClasses.length === 0) { const row = body.insertRow(); row.insertCell().colSpan = (scheduleSettings.periodsCount * scheduleSettings.days.length) + 1; row.cells[0].textContent = "لا توجد فصول."; } 
-            else { allClasses.forEach(className => {
+            
+            const classesToRender = allClasses; // Show all classes for all users in general view
+
+            if (classesToRender.length === 0) { const row = body.insertRow(); row.insertCell().colSpan = (scheduleSettings.periodsCount * scheduleSettings.days.length) + 1; row.cells[0].textContent = "لا توجد فصول."; } 
+            else { classesToRender.forEach(className => {
                     const row = body.insertRow(); row.dataset.class = className; row.insertCell().textContent = className;
                     scheduleSettings.days.forEach((day, dayIndex) => {
                         const firstCellIndexForDay = row.cells.length;
@@ -1389,7 +1431,9 @@
         
         function renderGeneralTeacherView() {
             const teacherTable = document.querySelector("#teacherScheduleTable"); const body = teacherTable.tBodies[0]; createTableHeader(teacherTable, { main: 'المعلم/اليوم', sub: 'الحصة' }); body.innerHTML = "";
-            allTeachers.forEach(teacher => {
+            const teachersToRender = userRole === 'admin' ? allTeachers : allTeachers.slice(0, 1);
+
+            teachersToRender.forEach(teacher => {
                 const row = body.insertRow(); row.dataset.teacher = teacher.name; row.insertCell().textContent = teacher.name;
                 scheduleSettings.days.forEach((day, dayIndex) => { 
                     const firstCellIndexForDay = row.cells.length;
@@ -1425,12 +1469,12 @@
         }
         
         function handleDaySelection(selectedDay) {
-            if (userRole !== 'admin' && selectedDay !== scheduleSettings.days[0]) {
+            if (userRole !== 'admin' && selectedDay !== (scheduleSettings.days ? scheduleSettings.days[0] : '')) {
                 document.getElementById('paymentModal').style.display = 'block';
                 document.getElementById('day-selector').value = scheduleSettings.days[0];
-            } else {
-                renderDailyView(selectedDay);
+                return;
             }
+            renderDailyView(selectedDay);
         }
 
         function closePaymentModal() {
@@ -1450,7 +1494,10 @@
                 if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) headerRow.innerHTML += `<th>فسحة</th>`;
                 headerRow.innerHTML += `<th>الحصة ${i}</th>`;
             }
-            allClasses.forEach(className => {
+
+            const classesToRender = allClasses; // Show all classes for all users in daily view as well
+
+            classesToRender.forEach(className => {
                 const row = body.insertRow(); row.insertCell().textContent = className;
                 for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
                     if (scheduleSettings.showBreak && p === scheduleSettings.breakAfterPeriod + 1) row.insertCell().style.backgroundColor = '#ddd';
@@ -1671,7 +1718,7 @@
             const draggedCardData = cards.find(c => c.id === draggedCardId); if (!draggedCardData) return;
             const quota = quotas.find(q => q.id === draggedCardData.quotaId); if (!quota) return;
 
-            if (!draggedCardData.classNames.includes(target.dataset.class)) { 
+            if (target.dataset.class && !draggedCardData.classNames.includes(target.dataset.class)) { 
                 target.classList.add('unavailable-slot'); 
                 return; 
             }
@@ -1709,20 +1756,21 @@
         function dragLeave(ev) { let target = ev.target.closest('td'); if (target) { target.classList.remove('available-slot', 'unavailable-slot', 'conflict-slot'); } }
         function clearAllHighlights() { document.querySelectorAll('.available-slot, .unavailable-slot, .conflict-slot').forEach(el => { el.classList.remove('available-slot', 'unavailable-slot', 'conflict-slot'); }); }
         
-        function findActiveTableId() {
-            if (document.getElementById('class-general-view').style.display === 'block') return 'scheduleTable';
-            if (document.getElementById('teacher-general-view').style.display === 'block') return 'teacherScheduleTable';
-            if (document.getElementById('daily-view').style.display === 'block') return 'dailyScheduleTable';
-            return 'scheduleTable';
+        function findActiveTable() {
+            const visibleContainer = [...document.querySelectorAll('.view-container')].find(c => c.style.display === 'block');
+            return visibleContainer ? visibleContainer.querySelector('table') : null;
         }
 
         function exportActiveTable(format) {
-            if (userRole !== 'admin') { alert('ليس لديك صلاحية التصدير.'); return; }
-            const tableId = findActiveTableId();
-            const table = document.getElementById(tableId);
+            if (userRole !== 'admin') { 
+                document.getElementById('paymentModal').style.display = 'block';
+                return;
+            }
+            const table = findActiveTable();
+            if(!table) { alert('لا يوجد جدول ظاهر لتصديره.'); return; }
             const header = `${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}`;
             const activeViewButton = document.querySelector('#view-controls .active-view-btn');
-            const filename = `${activeViewButton ? activeViewButton.textContent.trim() : 'جدول'}.`
+            const filename = `${activeViewButton ? activeViewButton.title : 'جدول'}.`
 
             if (format === 'excel') exportToExcel(table, header, filename + 'xlsx');
             if (format === 'word') exportToWord(table, header, filename + 'doc');
@@ -1777,7 +1825,7 @@
 
         function printSchedule() {
             if (userRole !== 'admin') {
-                alert('ليس لديك صلاحية الطباعة.');
+                document.getElementById('paymentModal').style.display = 'block';
                 return;
             }
             const isBw = document.getElementById('printBwCheckbox').checked;
@@ -1796,6 +1844,30 @@
                 content.style.display = 'none';
                 icon.textContent = '+';
             }
+        }
+        function renderTeacherStats() {
+            const statsContainer = document.getElementById('teacher-stats');
+            if (!statsContainer) return;
+
+            const stats = {};
+            allTeachers.forEach(t => stats[t.name] = 0);
+
+            quotas.forEach(q => {
+                const periodsPerClass = q.weeklyPeriods;
+                const numClasses = q.classNames.length;
+                q.teacherNames.forEach(name => {
+                    if (stats.hasOwnProperty(name)) {
+                        stats[name] += periodsPerClass * numClasses;
+                    }
+                });
+            });
+
+            let html = '<h4>إجمالي الأنصبة لكل معلم:</h4><ul>';
+            for (const teacher in stats) {
+                html += `<li><strong>${teacher}:</strong> ${stats[teacher]} حصة</li>`;
+            }
+            html += '</ul>';
+            statsContainer.innerHTML = html;
         }
         
         // --- Event listeners Setup ---
@@ -1819,11 +1891,6 @@
                 authContainer.style.display = 'none';
                 appContainer.style.display = 'block';
 
-                const exportControls = document.querySelector('.export-options');
-                if (exportControls) {
-                    exportControls.style.display = userRole === 'admin' ? 'flex' : 'none';
-                }
-
             } else {
                 currentUser = null;
                 userRole = 'user';
@@ -1837,10 +1904,7 @@
         document.getElementById('addClassForm').addEventListener('submit', addOrUpdateClass);
         document.getElementById('addSubjectForm').addEventListener('submit', addOrUpdateSubject);
         document.getElementById('addTeacherForm').addEventListener('submit', addTeacher);
-        document.getElementById('fontSize').addEventListener('input', (e) => {
-            document.getElementById('fontSizeValue').textContent = e.target.value;
-        });
-
+        
         document.getElementById('updateSettingsBtn').addEventListener('click', () => updateSettings(true));
         document.getElementById('cancelClassEditBtn').addEventListener('click', resetClassForm);
         document.getElementById('cancelSubjectEditBtn').addEventListener('click', resetSubjectForm);
@@ -1875,9 +1939,49 @@
         document.addEventListener('dragend', () => {
             document.querySelectorAll('.dragging').forEach(d => d.classList.remove('dragging'));
         });
-        document.getElementById('firstColumnWidth').addEventListener('input', () => updateSettings(false));
-        document.getElementById('dataColumnWidth').addEventListener('input', () => updateSettings(false));
-        document.getElementById('dataRowHeight').addEventListener('input', () => updateSettings(false));
+
+        document.getElementById('fontSize').addEventListener('input', (e) => {
+            document.getElementById('fontSizeValue').textContent = e.target.value;
+            scheduleSettings.fontSize = parseInt(e.target.value, 10);
+            applyVisualSettings();
+            saveSettings();
+        });
+        document.getElementById('firstColumnWidth').addEventListener('input', (e) => {
+             scheduleSettings.firstColumnWidth = parseInt(e.target.value, 10);
+             applyVisualSettings();
+             saveSettings();
+        });
+        document.getElementById('dataColumnWidth').addEventListener('input', (e) => {
+            scheduleSettings.dataColumnWidth = parseInt(e.target.value, 10);
+            applyVisualSettings();
+            saveSettings();
+        });
+        document.getElementById('dataRowHeight').addEventListener('input', (e) => {
+            scheduleSettings.dataRowHeight = parseInt(e.target.value, 10);
+            applyVisualSettings();
+            saveSettings();
+        });
+
+        document.getElementById('toggleBreakBtn').addEventListener('click', () => {
+            scheduleSettings.showBreak = !scheduleSettings.showBreak;
+            applyVisualSettings();
+            renderAllListsAndTables();
+            saveSettings();
+        });
+        document.getElementById('toggleTimeBtn').addEventListener('click', () => {
+            scheduleSettings.showTime = !scheduleSettings.showTime;
+            applyVisualSettings();
+            renderAllListsAndTables();
+            saveSettings();
+        });
+        document.querySelectorAll('.display-style-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                scheduleSettings.displayStyle = e.currentTarget.dataset.style;
+                applyVisualSettings();
+                renderAllListsAndTables();
+                saveSettings();
+            });
+        });
     </script>
 </body>
 </html>
