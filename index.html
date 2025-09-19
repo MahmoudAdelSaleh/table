@@ -1204,19 +1204,37 @@
             });
         }
 
-        function populateDropdowns() {
-            console.log("5. Trying to populate dropdowns. 'allClasses' variable is:", allClasses); // نقطة التتبع الخامسة
-            const classSelect = document.getElementById('className');
-            classSelect.innerHTML = '';
-            allClasses.forEach(c => classSelect.innerHTML += `<option value="${c}">${c}</option>`);
+       function populateDropdowns() {
+    // إعادة كتابة الوظيفة لتكون أكثر استقرارًا
 
-            const subjectSelect = document.getElementById('subject'); 
-            const currentSubVal = subjectSelect.value;
-            subjectSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
-            allSubjects.forEach(s => subjectSelect.innerHTML += `<option value="${s.name}">${s.name}</option>`); 
-            subjectSelect.value = currentSubVal;
-            filterTeachersBySubject();
-        }
+    const classSelect = document.getElementById('className');
+    if (classSelect) {
+        // 1. مسح الخيارات القديمة
+        classSelect.innerHTML = ''; 
+        
+        // 2. إضافة الخيارات الجديدة واحدًا تلو الآخر
+        allClasses.forEach(className => {
+            const option = document.createElement('option'); // إنشاء عنصر <option>
+            option.value = className; // تحديد القيمة
+            option.textContent = className; // تحديد النص الظاهر
+            classSelect.appendChild(option); // إضافة العنصر للقائمة
+        });
+    }
+
+    const subjectSelect = document.getElementById('subject');
+    if (subjectSelect) {
+        subjectSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
+        allSubjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject.name;
+            option.textContent = subject.name;
+            subjectSelect.appendChild(option);
+        });
+    }
+    
+    // هذه الوظيفة تبقى كما هي
+    filterTeachersBySubject();
+}
 
         function filterTeachersBySubject() {
             const subjectName = document.getElementById('subject').value; 
