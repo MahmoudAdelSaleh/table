@@ -127,23 +127,26 @@
         button.copy-btn { background-color: var(--copy-color); padding: 5px 10px; font-size: 0.9em; margin: 0;}
         button.copy-btn:hover { background-color: #8e44ad; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 0; }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 0; 
+            border: 3px solid var(--secondary-color);
+        }
         th, td { border: 1px solid #ddd; padding: 2px; text-align: center; vertical-align: middle; }
         
-        .table-wrapper {
-            border: 3px solid var(--secondary-color);
-            display: inline-block;
-            max-width: 100%;
-        }
         .main-schedule-container table { table-layout: fixed; }
         .main-schedule-container th:first-child, .main-schedule-container td:first-child { 
             width: var(--first-column-width); 
             white-space: normal; 
             word-break: break-word; 
             padding: 0 10px;
+            border-left: 3px solid var(--secondary-color) !important;
         }
         .main-schedule-container th:not(:first-child), .main-schedule-container td:not(:first-child),
-        #dailyScheduleTable th, #dailyScheduleTable td { 
+        #dailyScheduleTable th, #dailyScheduleTable td,
+        #singleClassScheduleTable th, #singleClassScheduleTable td,
+        #singleTeacherScheduleTable th, #singleTeacherScheduleTable td {
             width: var(--data-column-width); 
             height: var(--data-row-height); 
         }
@@ -160,7 +163,7 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             width: 90%; height: 90%; box-sizing: border-box; padding: 2px;
             font-size: 0.75em; line-height: 1.2;
-            transition: transform 0.2s ease, opacity 0.2s ease;
+            transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.3s;
         }
         .unassigned-card {
             width: 75px; height: 75px;
@@ -186,7 +189,12 @@
         .data-list li { padding: 8px; border-bottom: 1px solid #eee; }
         .data-list li:last-child { border-bottom: none; }
 
-        .view-controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: center;}
+        .view-controls-flex { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;}
+        .view-control-group { display: flex; align-items: center; gap: 5px; }
+        .view-control-group select { width: 180px; }
+        .icon-btn { width: 45px; height: 45px; padding: 0; display: flex; justify-content: center; align-items: center; }
+        .icon-btn svg { width: 24px; height: 24px; fill: white; }
+
         .view-container { display: none; }
 
         .active-view-btn { background-color: #2980b9; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
@@ -204,6 +212,16 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             width: 100%; height: 100%; font-size: 0.8em; line-height: 1.2;
             text-align: center; word-wrap: break-word; color: black;
+        }
+
+        body.colors-off .card {
+            background-color: var(--light-gray) !important;
+            color: var(--secondary-color) !important;
+            border: 1px solid var(--medium-gray);
+        }
+        body.colors-off .text-display {
+            background-color: transparent !important;
+            color: black !important;
         }
         
         .modal {
@@ -226,6 +244,10 @@
         .auth-form { display: flex; flex-direction: column; gap: 15px; }
         .auth-toggle { color: var(--primary-color); cursor: pointer; text-align: center; margin-top: 10px; }
         #user-info { text-align: left; padding: 10px; }
+
+        .toggle-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .toggle-icon { font-size: 1.5em; font-weight: bold; }
+        .quota-table-container { max-height: 520px; overflow-y: auto; }
         
         @media (max-width: 768px) {
             .data-management-grid { grid-template-columns: 1fr; }
@@ -314,9 +336,6 @@
                             <option value="text">نص فقط</option>
                         </select>
                     </div>
-                    <div><label for="firstColumnWidth">عرض العمود الأول (px)</label><input type="number" id="firstColumnWidth" min="50"></div>
-                    <div><label for="dataColumnWidth">عرض عمود الحصص (px)</label><input type="number" id="dataColumnWidth" min="50"></div>
-                    <div><label for="dataRowHeight">ارتفاع الصف (px)</label><input type="number" id="dataRowHeight" min="50"></div>
                 </div>
                  <div style="text-align: center; margin-top: 20px;">
                     <button id="updateSettingsBtn">حفظ وتطبيق الإعدادات</button>
@@ -370,35 +389,43 @@
 
             <!-- قسم إدارة الأنصبة -->
             <div class="management-section no-print">
-                <h2>إدارة الأنصبة</h2>
-                <form id="quotaForm" class="form-grid">
-                    <input type="hidden" id="quotaId">
-                    <div><label for="className">اسم الفصل (اختر فصل أو أكثر)</label><select id="className" required multiple></select></div>
-                    <div><label for="subject">المادة</label><select id="subject" required></select></div>
-                    <div><label for="teacherName">المعلم الأساسي</label><select id="teacherName" required></select></div>
-                    <div id="coTeacherContainer" style="display: none;"><label for="coTeacherName">المعلم المشارك (اختياري)</label><select id="coTeacherName"></select></div>
-                    <div><label for="weeklyPeriods">الحصص الأسبوعية</label><input type="number" id="weeklyPeriods" min="1" required placeholder="مثال: 4"></div>
-                    <div style="align-self: end; grid-column: 1 / -1;">
-                        <div style="display: flex; gap: 10px;">
-                            <button type="button" id="addQuotaBtn" style="flex: 2;">إضافة نصاب</button>
-                            <button type="button" id="toggleCoTeacherBtn" style="flex: 2;">إضافة معلم مشارك</button>
-                            <button type="button" id="cancelEditBtn" class="cancel-btn" style="flex: 1; display: none;">إلغاء</button>
+                <div class="toggle-header" onclick="toggleSection(this)">
+                    <h2>إدارة الأنصبة</h2>
+                    <span class="toggle-icon">-</span>
+                </div>
+                <div class="collapsible-content">
+                    <form id="quotaForm" class="form-grid">
+                        <input type="hidden" id="quotaId">
+                        <div><label for="className">اسم الفصل (اختر فصل أو أكثر)</label><select id="className" required multiple></select></div>
+                        <div><label for="subject">المادة</label><select id="subject" required></select></div>
+                        <div><label for="teacherName">المعلم الأساسي</label><select id="teacherName" required></select></div>
+                        <div id="coTeacherContainer" style="display: none;"><label for="coTeacherName">المعلم المشارك (اختياري)</label><select id="coTeacherName"></select></div>
+                        <div><label for="weeklyPeriods">الحصص الأسبوعية</label><input type="number" id="weeklyPeriods" min="1" required placeholder="مثال: 4"></div>
+                        <div style="align-self: end; grid-column: 1 / -1;">
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" id="addQuotaBtn" style="flex: 2;">إضافة نصاب</button>
+                                <button type="button" id="toggleCoTeacherBtn" style="flex: 2;">إضافة معلم مشارك</button>
+                                <button type="button" id="cancelEditBtn" class="cancel-btn" style="flex: 1; display: none;">إلغاء</button>
+                            </div>
                         </div>
+                    </form>
+                    <div class="quota-table-container">
+                        <table id="quotaTable">
+                            <thead><tr><th>الفصل</th><th>المادة</th><th>المعلمون</th><th>الحصص</th><th>إجراءات</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
-                </form>
-                <table id="quotaTable">
-                    <thead><tr><th>الفصل</th><th>المادة</th><th>المعلمون</th><th>الحصص</th><th>إجراءات</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                </div>
             </div>
             
             <!-- قسم التحكم والتوزيع -->
             <div class="management-section no-print">
                 <h2>التحكم والتوزيع</h2>
                 <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <button id="distributeRandomlyBtn">توزيع عشوائي</button>
                         <button id="resetScheduleBtn">إعادة تعيين</button>
+                        <button id="toggleColorsBtn">إخفاء/إظهار الألوان</button>
                     </div>
                      <div class="export-options" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                          <button id="printBtn">طباعة</button>
@@ -422,13 +449,30 @@
             <!-- قسم عرض الجداول -->
             <div class="management-section no-print">
                 <h2>عرض الجداول</h2>
-                <div id="view-controls" class="view-controls-grid">
-                    <button class="view-btn active-view-btn" data-view="class-general">جدول عام للفصول</button>
-                    <button class="view-btn" data-view="teacher-general">جدول عام للمعلمين</button>
-                    <button class="view-btn" data-view="daily">جدول يومي</button>
-                    <select id="class-selector" style="display:none;"></select>
-                    <select id="teacher-selector" style="display:none;"></select>
-                    <select id="day-selector" style="display:none;"></select>
+                <div id="view-controls" class="view-controls-flex">
+                     <div class="view-control-group">
+                        <button class="view-btn icon-btn" data-view="class-general" title="الجدول العام للفصول">
+                            <svg viewBox="0 0 24 24"><path d="M4,4H8V8H4V4M10,4H14V8H10V4M16,4H20V8H16V4M4,10H8V14H4V10M10,10H14V14H10V10M16,10H20V14H16V10M4,16H8V20H4V16M10,16H14V20H10V16M16,16H20V20H16V16Z" /></svg>
+                        </button>
+                        <select id="class-selector" title="اختر فصل لعرض جدوله منفرداً"></select>
+                    </div>
+                    <div class="view-control-group">
+                        <button class="view-btn icon-btn" data-view="teacher-general" title="الجدول العام للمعلمين">
+                            <svg viewBox="0 0 24 24"><path d="M16 17V19H2V17S2 13 9 13S16 17 16 17M12.5 7.5A3.5 3.5 0 1 0 9 11A3.5 3.5 0 0 0 12.5 7.5M15.94 13.62A5.32 5.32 0 0 1 18 17V19H22V17S22 13.38 15.94 13.62M15 4.5A3.5 3.5 0 1 0 11.5 8A3.5 3.5 0 0 0 15 4.5Z" /></svg>
+                        </button>
+                        <select id="teacher-selector" title="اختر معلماً لعرض جدوله منفرداً"></select>
+                    </div>
+                    <div class="view-control-group">
+                        <button class="view-btn icon-btn" data-view="daily" title="الجدول اليومي">
+                            <svg viewBox="0 0 24 24"><path d="M19 19H5V8H19M19 3H18V1H16V3H8V1H6V3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M16.53 11.06L15.47 10L10.59 14.88L8.47 12.76L7.41 13.82L10.59 17L16.53 11.06Z" /></svg>
+                        </button>
+                        <select id="day-selector"></select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; border-top: 1px solid var(--medium-gray); padding-top: 15px;">
+                    <div style="flex: 1; min-width: 150px;"><label for="firstColumnWidth">عرض العمود 1 (px)</label><input type="number" id="firstColumnWidth" min="50"></div>
+                    <div style="flex: 1; min-width: 150px;"><label for="dataColumnWidth">عرض الأعمدة (px)</label><input type="number" id="dataColumnWidth" min="50"></div>
+                    <div style="flex: 1; min-width: 150px;"><label for="dataRowHeight">ارتفاع الصفوف (px)</label><input type="number" id="dataRowHeight" min="50"></div>
                 </div>
             </div>
 
@@ -436,25 +480,33 @@
             <div id="class-general-view" class="view-container" style="display:block;">
                 <div class="schedule-print-header"></div>
                 <div style="overflow-x: auto;" class="main-schedule-container">
-                    <div class="table-wrapper">
-                        <table id="scheduleTable"><thead></thead><tbody></tbody></table>
-                    </div>
+                    <table id="scheduleTable"><thead></thead><tbody></tbody></table>
                 </div>
             </div>
+            <div id="single-class-view" class="view-container">
+                <div class="schedule-print-header"></div>
+                <div style="overflow-x: auto;" class="main-schedule-container">
+                    <!-- Single class table will be injected here -->
+                </div>
+            </div>
+
             <div id="teacher-general-view" class="view-container">
                 <div class="schedule-print-header"></div>
                 <div style="overflow-x: auto;" class="main-schedule-container">
-                    <div class="table-wrapper">
-                        <table id="teacherScheduleTable"><thead></thead><tbody></tbody></table>
-                    </div>
+                    <table id="teacherScheduleTable"><thead></thead><tbody></tbody></table>
                 </div>
             </div>
+            <div id="single-teacher-view" class="view-container">
+                <div class="schedule-print-header"></div>
+                <div style="overflow-x: auto;" class="main-schedule-container">
+                    <!-- Single teacher table will be injected here -->
+                </div>
+            </div>
+
             <div id="daily-view" class="view-container">
                 <div class="schedule-print-header"></div>
                 <div style="overflow-x: auto;" class="main-schedule-container">
-                    <div class="table-wrapper">
-                        <table id="dailyScheduleTable"><thead></thead><tbody></tbody></table>
-                    </div>
+                    <table id="dailyScheduleTable"><thead></thead><tbody></tbody></table>
                 </div>
             </div>
         </div>
@@ -1206,24 +1258,50 @@
 
         function switchView(view) {
             document.querySelectorAll('.view-container').forEach(c => c.style.display = 'none');
-            document.querySelectorAll('#view-controls .view-btn').forEach(b => b.classList.remove('active-view-btn'));
-            document.querySelector(`.view-btn[data-view='${view}']`).classList.add('active-view-btn');
-            const classSelector = document.getElementById('class-selector'); const teacherSelector = document.getElementById('teacher-selector'); const daySelector = document.getElementById('day-selector');
-            classSelector.style.display = 'none'; teacherSelector.style.display = 'none'; daySelector.style.display = 'none';
-            if (view === 'class-general') { document.getElementById('class-general-view').style.display = 'block'; classSelector.style.display = 'inline-block'; filterSingleView('class', classSelector.value); } 
-            else if (view === 'teacher-general') { renderGeneralTeacherView(); document.getElementById('teacher-general-view').style.display = 'block'; teacherSelector.style.display = 'inline-block'; filterSingleView('teacher', teacherSelector.value); }
-            else if (view === 'daily') { document.getElementById('daily-view').style.display = 'block'; daySelector.style.display = 'inline-block'; handleDaySelection(daySelector.value); }
+            document.querySelectorAll('#view-controls .icon-btn').forEach(b => b.classList.remove('active-view-btn'));
+            
+            const btn = document.querySelector(`.icon-btn[data-view='${view}']`);
+            if(btn) btn.classList.add('active-view-btn');
+
+            if (view === 'class-general') {
+                document.getElementById('class-selector').value = "";
+                filterSingleView('class', '');
+            } else if (view === 'teacher-general') {
+                document.getElementById('teacher-selector').value = "";
+                filterSingleView('teacher', '');
+            } else if (view === 'daily') {
+                document.getElementById('daily-view').style.display = 'block';
+                handleDaySelection(document.getElementById('day-selector').value);
+            }
         }
         
         function filterSingleView(type, value) {
-            const tableId = (type === 'class') ? 'scheduleTable' : 'teacherScheduleTable';
-            const table = document.getElementById(tableId); if (!table) return;
-            table.querySelectorAll('tbody tr').forEach(row => { row.style.display = (value === "" || row.dataset[type] === value) ? '' : 'none'; });
+            document.querySelectorAll('.view-container').forEach(c => c.style.display = 'none');
+            const generalViewId = (type === 'class') ? 'class-general-view' : 'teacher-general-view';
+            const singleViewId = (type === 'class') ? 'single-class-view' : 'single-teacher-view';
+            
+            document.querySelectorAll('#view-controls .icon-btn').forEach(b => b.classList.remove('active-view-btn'));
+            const btn = document.querySelector(`.icon-btn[data-view='${generalViewId.replace('-view','')}']`);
+            if(btn) btn.classList.add('active-view-btn');
+
+            if (value === "") {
+                document.getElementById(generalViewId).style.display = 'block';
+                if(type === 'class') renderGeneralClassView();
+                else renderGeneralTeacherView();
+            } else {
+                document.getElementById(singleViewId).style.display = 'block';
+                if (type === 'class') {
+                    renderSingleClassView(value);
+                } else {
+                    renderSingleTeacherView(value);
+                }
+            }
         }
+
 
         function createTableHeader(table, headerTexts) {
             table.tHead.innerHTML = '';
-            const { days, periodsCount, breakAfterPeriod, startTime, periodDuration, showBreak, showTime } = scheduleSettings;
+            const { days, periodsCount, breakAfterPeriod, showBreak, showTime, startTime, periodDuration } = scheduleSettings;
             let currentTime = new Date(`1970-01-01T${startTime}`);
             const columnsPerDay = periodsCount + (showBreak && breakAfterPeriod > 0 && breakAfterPeriod < periodsCount ? 1 : 0);
 
@@ -1232,27 +1310,20 @@
             days.forEach((day, dayIndex) => {
                 const th = headerRow1.insertCell(); th.textContent = day;
                 th.colSpan = columnsPerDay;
-                if (dayIndex > 0) {
-                    th.classList.add('day-divider');
-                }
+                if (dayIndex > 0) th.classList.add('day-divider');
             });
             
             const headerRow2 = table.tHead.insertRow(); 
             headerRow2.insertCell().textContent = headerTexts.sub;
             days.forEach((day, dayIndex) => {
+                let firstCellInDay = true;
                 for (let i = 1; i <= periodsCount; i++) {
                     if (showBreak && i === breakAfterPeriod + 1) {
-                        const breakCell = headerRow2.insertCell();
-                        breakCell.textContent = 'فسحة';
-                        if (i === 1 && dayIndex > 0) {
-                           breakCell.classList.add('day-divider');
-                        }
+                        const breakCell = headerRow2.insertCell(); breakCell.textContent = 'فسحة';
+                        if (dayIndex > 0 && firstCellInDay) { breakCell.classList.add('day-divider'); firstCellInDay = false; }
                     }
-                    const periodCell = headerRow2.insertCell();
-                    periodCell.textContent = i;
-                    if (i === 1 && dayIndex > 0 && !(showBreak && breakAfterPeriod === 0)) {
-                        periodCell.classList.add('day-divider');
-                    }
+                    const periodCell = headerRow2.insertCell(); periodCell.textContent = i;
+                    if (dayIndex > 0 && firstCellInDay) { periodCell.classList.add('day-divider'); firstCellInDay = false; }
                 }
             });
 
@@ -1261,33 +1332,34 @@
                 headerRow3.insertCell().textContent = 'الوقت';
                 days.forEach((day, dayIndex) => {
                     currentTime = new Date(`1970-01-01T${startTime}`);
+                    let firstCellInDay = true;
                     for (let i = 1; i <= periodsCount; i++) {
                         if (showBreak && i === breakAfterPeriod + 1) {
-                             const breakCell = headerRow3.insertCell();
-                             breakCell.textContent = '';
-                             if (i === 1 && dayIndex > 0) {
-                                breakCell.classList.add('day-divider');
-                             }
+                             const breakCell = headerRow3.insertCell(); breakCell.textContent = '';
+                             if (dayIndex > 0 && firstCellInDay) { breakCell.classList.add('day-divider'); firstCellInDay = false; }
                         }
                         const timeCell = headerRow3.insertCell();
                         const startTimeStr = currentTime.toTimeString().substring(0, 5);
                         currentTime.setMinutes(currentTime.getMinutes() + periodDuration);
                         const endTimeStr = currentTime.toTimeString().substring(0, 5);
                         timeCell.textContent = `${startTimeStr}-${endTimeStr}`;
-                        if (i === 1 && dayIndex > 0 && !(showBreak && breakAfterPeriod === 0)) {
-                            timeCell.classList.add('day-divider');
-                        }
+                        if (dayIndex > 0 && firstCellInDay) { timeCell.classList.add('day-divider'); firstCellInDay = false; }
                     }
                 });
             }
         }
         
         function populateSelectors() {
-            const classSelector = document.getElementById('class-selector'); classSelector.innerHTML = '<option value="">عرض كل الفصول</option>';
+            const classSelector = document.getElementById('class-selector'); 
+            classSelector.innerHTML = '<option value="">اختر فصل...</option>';
             allClasses.forEach(c => classSelector.innerHTML += `<option value="${c}">${c}</option>`);
-            const teacherSelector = document.getElementById('teacher-selector'); teacherSelector.innerHTML = '<option value="">عرض كل المعلمين</option>';
+            
+            const teacherSelector = document.getElementById('teacher-selector'); 
+            teacherSelector.innerHTML = '<option value="">اختر معلم...</option>';
             allTeachers.forEach(t => teacherSelector.innerHTML += `<option value="${t.name}">${t.name}</option>`);
-            const daySelector = document.getElementById('day-selector'); daySelector.innerHTML = '';
+
+            const daySelector = document.getElementById('day-selector'); 
+            daySelector.innerHTML = '';
             scheduleSettings.days.forEach(d => daySelector.innerHTML += `<option value="${d}">${d}</option>`);
         }
         
@@ -1298,7 +1370,7 @@
             else { allClasses.forEach(className => {
                     const row = body.insertRow(); row.dataset.class = className; row.insertCell().textContent = className;
                     scheduleSettings.days.forEach((day, dayIndex) => {
-                        const firstCellIndexForThisDay = row.cells.length;
+                        const firstCellIndexForDay = row.cells.length;
                         for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
                             if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
                                 const breakCell = row.insertCell(); breakCell.style.backgroundColor = '#ddd';
@@ -1307,7 +1379,7 @@
                             cell.ondrop = drop; cell.ondragover = allowDrop; cell.ondragenter = dragEnter; cell.ondragleave = dragLeave;
                         }
                         if (dayIndex > 0) {
-                            row.cells[firstCellIndexForThisDay].classList.add('day-divider');
+                            row.cells[firstCellIndexForDay].classList.add('day-divider');
                         }
                     });
                 });
@@ -1320,13 +1392,13 @@
             allTeachers.forEach(teacher => {
                 const row = body.insertRow(); row.dataset.teacher = teacher.name; row.insertCell().textContent = teacher.name;
                 scheduleSettings.days.forEach((day, dayIndex) => { 
-                    const firstCellIndexForThisDay = row.cells.length;
+                    const firstCellIndexForDay = row.cells.length;
                     for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
                         if (scheduleSettings.showBreak && p === scheduleSettings.breakAfterPeriod + 1) row.insertCell().style.backgroundColor = '#ddd';
                         const cell = row.insertCell(); cell.dataset.teacher = teacher.name; cell.dataset.day = day; cell.dataset.period = p; 
                     }
                     if (dayIndex > 0) {
-                        row.cells[firstCellIndexForThisDay].classList.add('day-divider');
+                        row.cells[firstCellIndexForDay].classList.add('day-divider');
                     }
                 });
             });
@@ -1367,7 +1439,12 @@
 
         function renderDailyView(day) {
             if (!day) return;
-            const table = document.querySelector("#dailyScheduleTable"); const body = table.tBodies[0] || table.createTBody(); const head = table.tHead || table.createTHead(); head.innerHTML = ''; body.innerHTML = '';
+            const container = document.getElementById('daily-view').querySelector('.main-schedule-container');
+            container.innerHTML = '';
+            const table = document.createElement('table');
+            table.id = 'dailyScheduleTable';
+            const body = table.createTBody(); const head = table.createTHead();
+            
             const headerRow = head.insertRow(); headerRow.innerHTML = '<th>الفصل</th>';
             for (let i = 1; i <= scheduleSettings.periodsCount; i++) { 
                 if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) headerRow.innerHTML += `<th>فسحة</th>`;
@@ -1392,12 +1469,117 @@
                     }
                 }
             });
+            container.appendChild(table);
         }
 
-        async function resetSchedule() { placements = {}; await savePlacements(); renderAllListsAndTables(); }
+        function renderSingleClassView(className) {
+            const container = document.getElementById('single-class-view').querySelector('.main-schedule-container');
+            container.innerHTML = ''; 
+            const printHeader = document.getElementById('single-class-view').querySelector('.schedule-print-header');
+            printHeader.innerHTML = `<h3>جدول فصل: ${className}</h3><p>${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}</p>`;
+
+            const table = document.createElement('table');
+            table.id = 'singleClassScheduleTable';
+            const head = table.createTHead();
+            const body = table.createTBody();
+
+            const headerRow = head.insertRow();
+            headerRow.insertCell().textContent = 'اليوم';
+            for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+                if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
+                    headerRow.insertCell().textContent = 'فسحة';
+                }
+                headerRow.insertCell().textContent = `الحصة ${i}`;
+            }
+
+            scheduleSettings.days.forEach(day => {
+                const row = body.insertRow();
+                row.insertCell().textContent = day;
+                for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
+                    if (scheduleSettings.showBreak && period === scheduleSettings.breakAfterPeriod + 1) {
+                        row.insertCell().style.backgroundColor = '#ddd';
+                    }
+                    const cell = row.insertCell();
+                    const placementKey = Object.keys(placements).find(cardId => {
+                        const p = placements[cardId];
+                        const card = cards.find(c => c.id === cardId);
+                        return card && card.classNames.includes(className) && p.day === day && p.period == period;
+                    });
+                    if (placementKey) {
+                        const cardData = cards.find(c => c.id === placementKey);
+                        if (cardData) {
+                            const cardEl = createCardElement(cardData);
+                            cardEl.draggable = false;
+                            cell.appendChild(cardEl);
+                        }
+                    }
+                }
+            });
+            container.appendChild(table);
+        }
+
+        function renderSingleTeacherView(teacherName) {
+            const container = document.getElementById('single-teacher-view').querySelector('.main-schedule-container');
+            container.innerHTML = '';
+            const printHeader = document.getElementById('single-teacher-view').querySelector('.schedule-print-header');
+            printHeader.innerHTML = `<h3>جدول المعلم: ${teacherName}</h3><p>${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}</p>`;
+            
+            const table = document.createElement('table');
+            table.id = 'singleTeacherScheduleTable';
+            const head = table.createTHead();
+            const body = table.createTBody();
+
+            const headerRow = head.insertRow();
+            headerRow.insertCell().textContent = 'اليوم';
+            for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+                if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
+                    headerRow.insertCell().textContent = 'فسحة';
+                }
+                headerRow.insertCell().textContent = `الحصة ${i}`;
+            }
+
+            scheduleSettings.days.forEach(day => {
+                const row = body.insertRow();
+                row.insertCell().textContent = day;
+                for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
+                    if (scheduleSettings.showBreak && period === scheduleSettings.breakAfterPeriod + 1) {
+                        row.insertCell().style.backgroundColor = '#ddd';
+                    }
+                    const cell = row.insertCell();
+                    const placementKey = Object.keys(placements).find(cardId => {
+                        const p = placements[cardId];
+                        const card = cards.find(c => c.id === cardId);
+                        const quota = card ? quotas.find(q => q.id === card.quotaId) : null;
+                        return quota && quota.teacherNames.includes(teacherName) && p.day === day && p.period == period;
+                    });
+                    if (placementKey) {
+                        const cardData = cards.find(c => c.id === placementKey);
+                        if (cardData) {
+                            const cardEl = createCardElement(cardData);
+                            cardEl.innerHTML = `${cardData.content.split('<br><b>')[0]}<br><b>(${cardData.classNames.join(', ')})</b>`;
+                            cardEl.draggable = false;
+                            cell.appendChild(cardEl);
+                        }
+                    }
+                }
+            });
+
+            container.appendChild(table);
+        }
+
+        async function resetSchedule() {
+            placements = {}; 
+            await savePlacements(); 
+            renderAllListsAndTables();
+            const activeViewButton = document.querySelector('#view-controls .active-view-btn');
+            if (activeViewButton) {
+                switchView(activeViewButton.dataset.view);
+            }
+        }
 
         async function distributeRandomly() {
-            await resetSchedule(); generateCards();
+            await resetSchedule();
+            generateCards();
             let assignableCards = [...cards];
             for (let i = assignableCards.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [assignableCards[i], assignableCards[j]] = [assignableCards[j], assignableCards[i]]; }
             const teacherSchedule = new Map(); allTeachers.forEach(t => teacherSchedule.set(t.name, new Set()));
@@ -1427,6 +1609,10 @@
             });
             await savePlacements();
             renderAllListsAndTables();
+            const activeViewButton = document.querySelector('#view-controls .active-view-btn');
+            if (activeViewButton) {
+                switchView(activeViewButton.dataset.view);
+            }
         }
 
         function allowDrop(ev) { ev.preventDefault(); }
@@ -1599,6 +1785,18 @@
             window.print();
             setTimeout(() => { if (isBw) { document.body.classList.remove('print-bw'); } }, 500);
         }
+
+        function toggleSection(headerElement) {
+            const content = headerElement.nextElementSibling;
+            const icon = headerElement.querySelector('.toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = '';
+                icon.textContent = '-';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '+';
+            }
+        }
         
         // --- Event listeners Setup ---
         auth.onAuthStateChanged(async user => {
@@ -1643,7 +1841,7 @@
             document.getElementById('fontSizeValue').textContent = e.target.value;
         });
 
-        document.getElementById('updateSettingsBtn').addEventListener('click', updateSettings);
+        document.getElementById('updateSettingsBtn').addEventListener('click', () => updateSettings(true));
         document.getElementById('cancelClassEditBtn').addEventListener('click', resetClassForm);
         document.getElementById('cancelSubjectEditBtn').addEventListener('click', resetSubjectForm);
         document.getElementById('addQuotaBtn').addEventListener('click', addOrUpdateQuota);
@@ -1657,6 +1855,9 @@
         document.getElementById('wordBtn').addEventListener('click', () => exportActiveTable('word'));
         document.getElementById('saveTeacherChangesBtn').addEventListener('click', saveTeacherChanges);
         document.getElementById('confirmCopyQuotaBtn').addEventListener('click', confirmCopyQuota);
+        document.getElementById('toggleColorsBtn').addEventListener('click', () => {
+            document.body.classList.toggle('colors-off');
+        });
 
         document.querySelectorAll('.auth-toggle').forEach(el => el.addEventListener('click', () => toggleAuthView(el.parentElement.id === 'signup-view')));
         document.querySelectorAll('.modal-close-btn').forEach(el => {
@@ -1665,7 +1866,7 @@
             });
         });
         document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => switchView(e.target.dataset.view));
+            btn.addEventListener('click', (e) => switchView(e.currentTarget.dataset.view));
         });
         document.getElementById('class-selector').addEventListener('change', (e) => filterSingleView('class', e.target.value));
         document.getElementById('teacher-selector').addEventListener('change', (e) => filterSingleView('teacher', e.target.value));
@@ -1674,7 +1875,11 @@
         document.addEventListener('dragend', () => {
             document.querySelectorAll('.dragging').forEach(d => d.classList.remove('dragging'));
         });
+        document.getElementById('firstColumnWidth').addEventListener('input', () => updateSettings(false));
+        document.getElementById('dataColumnWidth').addEventListener('input', () => updateSettings(false));
+        document.getElementById('dataRowHeight').addEventListener('input', () => updateSettings(false));
     </script>
 </body>
 </html>
+"
 
