@@ -1631,13 +1631,15 @@
                 const card = cards.find(c => c.id === cardId);
                 return card && card.classNames.includes(className) && p.day === day && p.period == period;
             });
+
             if (placementKey) {
                 const cardData = cards.find(c => c.id === placementKey);
-                if (cardData) {
+                // ▼▼▼ هذا هو الجزء المصحح ▼▼▼
+                const quota = quotas.find(q => q.id === cardData.quotaId);
+                if (cardData && quota) {
                     const cardEl = createCardElement(cardData);
-                    // ▼▼▼ هذا هو الجزء الذي تم إصلاحه ▼▼▼
-                    // نعيد بناء المحتوى هنا بدون اسم الفصل
-                    cardEl.innerHTML = `${cardData.subject}<br><small>${cardData.teacherNames.join(' و ')}</small>`;
+                    // نقرأ البيانات من "quota" وليس "cardData"
+                    cardEl.innerHTML = `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small>`;
                     cardEl.draggable = false;
                     cell.appendChild(cardEl);
 
@@ -1687,13 +1689,15 @@ function renderSingleTeacherView(teacherName) {
                 const quota = card ? quotas.find(q => q.id === card.quotaId) : null;
                 return quota && quota.teacherNames.includes(teacherName) && p.day === day && p.period == period;
             });
+            
             if (placementKey) {
                 const cardData = cards.find(c => c.id === placementKey);
-                if (cardData) {
+                 // ▼▼▼ هذا هو الجزء المصحح ▼▼▼
+                const quota = quotas.find(q => q.id === cardData.quotaId);
+                if (cardData && quota) {
                     const cardEl = createCardElement(cardData);
-                    // ▼▼▼ هذا هو الجزء الذي تم إصلاحه ▼▼▼
-                    // نعيد بناء المحتوى هنا مع اسم الفصل لأنه مهم في جدول المعلم
-                    cardEl.innerHTML = `${cardData.subject}<br><small>${cardData.teacherNames.join(' و ')}</small><br><b>(${cardData.classNames.join(', ')})</b>`;
+                    // نقرأ البيانات من "quota" وليس "cardData"
+                    cardEl.innerHTML = `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small><br><b>(${quota.classNames.join(', ')})</b>`;
                     cardEl.draggable = false;
                     cell.appendChild(cardEl);
 
@@ -2246,5 +2250,6 @@ async function exportAllDaysPDF() {
 </body>
 </html>
 "
+
 
 
