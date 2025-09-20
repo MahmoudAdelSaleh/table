@@ -8,11 +8,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
     <!-- Libraries for Exporting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary-color: #3498db;
@@ -273,23 +272,78 @@
             #teacher-stats ul { column-count: 1; }
         }
 
-        @media print {
-            body { padding: 0; margin: 0; --base-font-size: 10px; }
-            .container { box-shadow: none; padding: 0; max-width: 100%; }
-            .no-print { display: none; }
-            th, td { font-size: 0.9em; padding: 2px; height: auto; width: auto; vertical-align: middle; }
-            .schedule-print-header { display: block; }
-            .card { display: none !important; }
-            .text-display { display: flex !important; font-size: 0.8em; }
-            #scheduleTable td, #teacherScheduleTable td, #dailyScheduleTable td { height: 70px; width: 70px; }
-            .main-schedule-container th:first-child, .main-schedule-container td:first-child { width: 100px; }
-            body.print-bw .text-display { background-color: white !important; color: black !important; }
-            body.print-bw th { background-color: #f2f2f2 !important; color: black !important; }
-        }
+        /* ==========================================================================
+   --- كود الطباعة الاحترافي ---
+   ========================================================================== */
+@media print {
+    /* --- إعدادات الصفحة --- */
+    @page {
+        size: A4 landscape; /* تحديد حجم الصفحة A4 وبالعرض */
+        margin: 1cm;      /* هوامش الصفحة */
+    }
+
+    /* --- إخفاء العناصر غير المرغوب فيها --- */
+    body > *:not(.printable-area) {
+        display: none !important;
+    }
+    .no-print, .modal, #user-info {
+        display: none !important;
+    }
+    
+    /* --- إظهار وتنسيق العناصر المراد طباعتها --- */
+    body {
+        padding: 0;
+        margin: 0;
+        --base-font-size: 10px; /* تصغير حجم الخط الأساسي للطباعة */
+    }
+    .printable-area {
+        display: block !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+    }
+    .container {
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .schedule-print-header {
+        display: block !important; /* إظهار رأس الطباعة */
+    }
+
+    /* --- التحكم في فواصل الصفحات (أهم جزء) --- */
+    /* ابدأ صفحة جديدة قبل كل صف أو معلم في الجداول العامة */
+    .page-break-before {
+        page-break-before: always !important;
+    }
+    /* لا تبدأ بصفحة فارغة */
+    tr.page-break-before:first-child {
+        page-break-before: avoid !important;
+    }
+    
+    /* --- تنسيق الجداول للطباعة --- */
+    table {
+        width: 100% !important;
+        page-break-inside: avoid; /* محاولة إبقاء الجدول في صفحة واحدة */
+    }
+    .card { display: none !important; }
+    .text-display { display: flex !important; }
+    th, td { font-size: 8pt !important; }
+}
     </style>
 </head>
 <body>
-    
+    <div id="print-header" style="display: none; text-align: center; margin-bottom: 20px;">
+    <h2 id="print-school-name"></h2>
+    <p id="print-title"></p>
+</div>
+
+<div id="print-footer" style="display: none; text-align: center; margin-top: 20px; position: fixed; bottom: 0; width: 100%;">
+    <p>مسئول الجدول: <span id="print-scheduler-name"></span></p>
+</div>
     <div id="auth-container" class="auth-container">
         <div id="login-view">
             <h2>تسجيل الدخول</h2>
@@ -305,8 +359,6 @@
             <form id="signup-form" class="auth-form">
                 <input type="email" id="signup-email" placeholder="البريد الإلكتروني" required>
                 <input type="password" id="signup-password" placeholder="كلمة المرور" required>
-                <input type="text" id="signup-username" placeholder="اسم المستخدم" required>
-                 <input type="tel" id="signup-phone" placeholder="رقم الهاتف" required>
                 <button type="submit">إنشاء حساب</button>
             </form>
             <p class="auth-toggle">لديك حساب بالفعل؟ قم بتسجيل الدخول</p>
@@ -510,15 +562,12 @@
             </div>
 
             <div class="export-buttons-group" style="margin-top: 20px;">
-                 <button id="printBtn">طباعة</button>
+                 
                  <button id="pdfBtn">PDF</button>
                  <button id="excelBtn">Excel</button>
-                 <button id="wordBtn">Word</button>
-                 <div style="display: flex; align-items: center; justify-content:center; gap: 5px; min-width: 120px;">
-                     <input type="checkbox" id="printBwCheckbox" style="width: auto; margin-top: 0;">
-                     <label for="printBwCheckbox" style="margin: 0;">بدون ألوان</label>
-                 </div>
-             </div>
+                 
+                       
+            </div>
         </div>
     </div>
     
@@ -677,33 +726,30 @@
             await batch.commit();
         }
 
-        async function loadUserData() {
+     async function loadUserData() {
     if (!currentUser) return;
-    console.log("1. Starting to load user data..."); // نقطة التتبع الأولى
-
+    
+    // جلب كل البيانات دفعة واحدة
     const dataCollections = ['classes', 'subjects', 'teachers', 'quotas', 'placements', 'settings'];
     const promises = dataCollections.map(col => db.collection('users').doc(currentUser.uid).collection('data').doc(col).get());
     const [classesDoc, subjectsDoc, teachersDoc, quotasDoc, placementsDoc, settingsDoc] = await Promise.all(promises);
 
-    console.log("2. Fetched 'classes' document from Firestore. Does it exist?", classesDoc.exists); // نقطة التتبع الثانية
-    if (classesDoc.exists) {
-        console.log("3. Data inside 'classes' document:", classesDoc.data()); // نقطة التتبع الثالثة
-    }
-
-    allClasses = classesDoc.exists ? classesDoc.data().list : [];
-    allSubjects = subjectsDoc.exists ? subjectsDoc.data().list : [];
-    allTeachers = teachersDoc.exists ? teachersDoc.data().list : [];
-    quotas = quotasDoc.exists ? quotasDoc.data().list : [];
-    placements = placementsDoc.exists ? placementsDoc.data() : {};
-    scheduleSettings = settingsDoc.exists ? settingsDoc.data() : {
+    // التحقق من سلامة البيانات قبل إسنادها (هذا هو الإصلاح الرئيسي)
+    // نتأكد أن الخاصية list موجودة وأنها مصفوفة بالفعل
+    allClasses = (classesDoc.exists && Array.isArray(classesDoc.data().list)) ? classesDoc.data().list : [];
+    allSubjects = (subjectsDoc.exists && Array.isArray(subjectsDoc.data().list)) ? subjectsDoc.data().list : [];
+    allTeachers = (teachersDoc.exists && Array.isArray(teachersDoc.data().list)) ? teachersDoc.data().list : [];
+    quotas = (quotasDoc.exists && Array.isArray(quotasDoc.data().list)) ? quotasDoc.data().list : [];
+    
+    // نتأكد أن البيانات هي كائن (object)
+    placements = (placementsDoc.exists && typeof placementsDoc.data() === 'object') ? placementsDoc.data() : {};
+    scheduleSettings = (settingsDoc.exists && typeof settingsDoc.data() === 'object') ? settingsDoc.data() : {
         schoolName: 'مدرستي الابتدائية', academicYear: '2025-2026', schedulerName: 'مسئول الجدول',
         daysCount: 5, periodsCount: 7, startDay: 'الأحد', breakAfterPeriod: 4,
         periodDuration: 45, startTime: '08:00', showBreak: true, showTime: true,
         fontSize: 14, displayStyle: 'cards',
         firstColumnWidth: 100, dataColumnWidth: 85, dataRowHeight: 85
     };
-
-    console.log("4. 'allClasses' variable is now:", allClasses); // نقطة التتبع الرابعة
 }
 
         function renderAllListsAndTables() {
@@ -712,7 +758,6 @@
     renderClassesList();
     renderSubjectsList();
     renderTeachersList();
-    // populateDropdowns(); // << سنقوم بتعطيلها من هنا
     renderQuotaTable();
     renderGeneralClassView();
     renderGeneralTeacherView();
@@ -720,11 +765,14 @@
     renderUnassignedCards();
     updatePrintHeaders();
 
+    // ▼▼▼ هذا هو السطر الذي يجب إضافته ▼▼▼
+    populateSelectors(); // لملء قوائم عرض الجداول (الفصل، المعلم، اليوم)
+
     // 2. ... ثم نؤجل ملء القوائم المنسدلة إلى آخر لحظة ممكنة
     setTimeout(function() {
         console.log("Now, for real, populating the dropdowns!");
-        populateDropdowns();
-    }, 0); // التأخير صفر يعني "نفذ هذا بمجرد أن تنتهي من كل شيء آخر"
+        populateDropdowns(); // هذه الدالة خاصة بقوائم قسم "إدارة الأنصبة" وستبقى تعمل كما هي
+    }, 0); 
 }
 
         function initializeSettingsForm() {
@@ -1427,50 +1475,60 @@
         }
         
         function renderGeneralClassView() {
-            const table = document.querySelector("#scheduleTable"); const body = table.tBodies[0]; createTableHeader(table, { main: 'الفصل/اليوم', sub: 'الحصة' }); body.innerHTML = "";
-            
-            const classesToRender = allClasses; // Show all classes for all users in general view
+    const table = document.querySelector("#scheduleTable"); const body = table.tBodies[0]; createTableHeader(table, { main: 'الفصل/اليوم', sub: 'الحصة' }); body.innerHTML = "";
+    
+    const classesToRender = allClasses; // Show all classes for all users in general view
 
-            if (classesToRender.length === 0) { const row = body.insertRow(); row.insertCell().colSpan = (scheduleSettings.periodsCount * scheduleSettings.days.length) + 1; row.cells[0].textContent = "لا توجد فصول."; } 
-            else { classesToRender.forEach(className => {
-                    const row = body.insertRow(); row.dataset.class = className; row.insertCell().textContent = className;
-                    scheduleSettings.days.forEach((day, dayIndex) => {
-                        const firstCellIndexForDay = row.cells.length;
-                        for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
-                            if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
-                                const breakCell = row.insertCell(); breakCell.style.backgroundColor = '#ddd';
-                            }
-                            const cell = row.insertCell(); cell.dataset.class = className; cell.dataset.day = day; cell.dataset.period = i;
-                            cell.ondrop = drop; cell.ondragover = allowDrop; cell.ondragenter = dragEnter; cell.ondragleave = dragLeave;
-                        }
-                        if (dayIndex > 0) {
-                            row.cells[firstCellIndexForDay].classList.add('day-divider');
-                        }
-                    });
-                });
-            }
-            reapplyPlacements();
-        }
+    if (classesToRender.length === 0) { const row = body.insertRow(); row.insertCell().colSpan = (scheduleSettings.periodsCount * scheduleSettings.days.length) + 1; row.cells[0].textContent = "لا توجد فصول."; } 
+    else { classesToRender.forEach(className => {
+            const row = body.insertRow(); 
+            
+            // ▼▼▼ هذا هو السطر الوحيد الذي تمت إضافته ▼▼▼
+            row.classList.add('page-break-before');
+
+            row.dataset.class = className; row.insertCell().textContent = className;
+            scheduleSettings.days.forEach((day, dayIndex) => {
+                const firstCellIndexForDay = row.cells.length;
+                for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+                    if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
+                        const breakCell = row.insertCell(); breakCell.style.backgroundColor = '#ddd';
+                    }
+                    const cell = row.insertCell(); cell.dataset.class = className; cell.dataset.day = day; cell.dataset.period = i;
+                    cell.ondrop = drop; cell.ondragover = allowDrop; cell.ondragenter = dragEnter; cell.ondragleave = dragLeave;
+                }
+                if (dayIndex > 0) {
+                    row.cells[firstCellIndexForDay].classList.add('day-divider');
+                }
+            });
+        });
+    }
+    reapplyPlacements();
+}
         
         function renderGeneralTeacherView() {
-            const teacherTable = document.querySelector("#teacherScheduleTable"); const body = teacherTable.tBodies[0]; createTableHeader(teacherTable, { main: 'المعلم/اليوم', sub: 'الحصة' }); body.innerHTML = "";
-            const teachersToRender = userRole === 'admin' ? allTeachers : allTeachers.slice(0, 1);
+    const teacherTable = document.querySelector("#teacherScheduleTable"); const body = teacherTable.tBodies[0]; createTableHeader(teacherTable, { main: 'المعلم/اليوم', sub: 'الحصة' }); body.innerHTML = "";
+    const teachersToRender = userRole === 'admin' ? allTeachers : allTeachers.slice(0, 1);
 
-            teachersToRender.forEach(teacher => {
-                const row = body.insertRow(); row.dataset.teacher = teacher.name; row.insertCell().textContent = teacher.name;
-                scheduleSettings.days.forEach((day, dayIndex) => { 
-                    const firstCellIndexForDay = row.cells.length;
-                    for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
-                        if (scheduleSettings.showBreak && p === scheduleSettings.breakAfterPeriod + 1) row.insertCell().style.backgroundColor = '#ddd';
-                        const cell = row.insertCell(); cell.dataset.teacher = teacher.name; cell.dataset.day = day; cell.dataset.period = p; 
-                    }
-                    if (dayIndex > 0) {
-                        row.cells[firstCellIndexForDay].classList.add('day-divider');
-                    }
-                });
-            });
-            reapplyPlacementsToTeacherView();
-        }
+    teachersToRender.forEach(teacher => {
+        const row = body.insertRow(); 
+
+        // ▼▼▼ هذا هو السطر الوحيد الذي تمت إضافته ▼▼▼
+        row.classList.add('page-break-before');
+
+        row.dataset.teacher = teacher.name; row.insertCell().textContent = teacher.name;
+        scheduleSettings.days.forEach((day, dayIndex) => { 
+            const firstCellIndexForDay = row.cells.length;
+            for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
+                if (scheduleSettings.showBreak && p === scheduleSettings.breakAfterPeriod + 1) row.insertCell().style.backgroundColor = '#ddd';
+                const cell = row.insertCell(); cell.dataset.teacher = teacher.name; cell.dataset.day = day; cell.dataset.period = p; 
+            }
+            if (dayIndex > 0) {
+                row.cells[firstCellIndexForDay].classList.add('day-divider');
+            }
+        });
+    });
+    reapplyPlacementsToTeacherView();
+}
 
         function reapplyPlacementsToTeacherView() {
              document.querySelectorAll('#teacherScheduleTable td .card, #teacherScheduleTable td .text-display').forEach(c => c.remove());
@@ -1574,13 +1632,15 @@
                 const card = cards.find(c => c.id === cardId);
                 return card && card.classNames.includes(className) && p.day === day && p.period == period;
             });
+
             if (placementKey) {
                 const cardData = cards.find(c => c.id === placementKey);
-                if (cardData) {
+                // ▼▼▼ هذا هو الجزء المصحح ▼▼▼
+                const quota = quotas.find(q => q.id === cardData.quotaId);
+                if (cardData && quota) {
                     const cardEl = createCardElement(cardData);
-                    // ▼▼▼ هذا هو الجزء الذي تم إصلاحه ▼▼▼
-                    // نعيد بناء المحتوى هنا بدون اسم الفصل
-                    cardEl.innerHTML = `${cardData.subject}<br><small>${cardData.teacherNames.join(' و ')}</small>`;
+                    // نقرأ البيانات من "quota" وليس "cardData"
+                    cardEl.innerHTML = `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small>`;
                     cardEl.draggable = false;
                     cell.appendChild(cardEl);
 
@@ -1630,13 +1690,15 @@ function renderSingleTeacherView(teacherName) {
                 const quota = card ? quotas.find(q => q.id === card.quotaId) : null;
                 return quota && quota.teacherNames.includes(teacherName) && p.day === day && p.period == period;
             });
+            
             if (placementKey) {
                 const cardData = cards.find(c => c.id === placementKey);
-                if (cardData) {
+                 // ▼▼▼ هذا هو الجزء المصحح ▼▼▼
+                const quota = quotas.find(q => q.id === cardData.quotaId);
+                if (cardData && quota) {
                     const cardEl = createCardElement(cardData);
-                    // ▼▼▼ هذا هو الجزء الذي تم إصلاحه ▼▼▼
-                    // نعيد بناء المحتوى هنا مع اسم الفصل لأنه مهم في جدول المعلم
-                    cardEl.innerHTML = `${cardData.subject}<br><small>${cardData.teacherNames.join(' و ')}</small><br><b>(${cardData.classNames.join(', ')})</b>`;
+                    // نقرأ البيانات من "quota" وليس "cardData"
+                    cardEl.innerHTML = `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small><br><b>(${quota.classNames.join(', ')})</b>`;
                     cardEl.draggable = false;
                     cell.appendChild(cardEl);
 
@@ -1863,15 +1925,36 @@ function renderSingleTeacherView(teacherName) {
         }
 
         function printSchedule() {
-            if (userRole !== 'admin') {
-                document.getElementById('paymentModal').style.display = 'block';
-                return;
-            }
-            const isBw = document.getElementById('printBwCheckbox').checked;
-            if (isBw) { document.body.classList.add('print-bw'); }
-            window.print();
-            setTimeout(() => { if (isBw) { document.body.classList.remove('print-bw'); } }, 500);
-        }
+    if (userRole !== 'admin') {
+        alert('ليس لديك صلاحية الطباعة.');
+        return;
+    }
+    
+    // 1. تعبئة بيانات الرأس والتذييل
+    const activeView = document.querySelector('.view-container[style*="display: block"]');
+    let title = "الجدول العام للفصول"; // عنوان افتراضي
+    if (activeView.id === 'single-class-view') {
+        title = `جدول فصل: ${document.getElementById('class-selector').value}`;
+    } else if (activeView.id === 'single-teacher-view') {
+        title = `جدول المعلم: ${document.getElementById('teacher-selector').value}`;
+    } else if (activeView.id === 'daily-view') {
+         title = `الجدول اليومي ليوم: ${document.getElementById('day-selector').value}`;
+    }
+    
+    document.getElementById('print-school-name').textContent = scheduleSettings.schoolName || 'اسم المدرسة';
+    document.getElementById('print-title').textContent = title;
+    document.getElementById('print-scheduler-name').textContent = scheduleSettings.schedulerName || '';
+
+    // 2. تطبيق إعدادات الطباعة بدون ألوان
+    const isBw = document.getElementById('printBwCheckbox').checked;
+    if (isBw) { document.body.classList.add('print-bw'); }
+    
+    // 3. استدعاء الطباعة
+    window.print();
+    
+    // 4. إعادة الوضع الطبيعي بعد الطباعة
+    setTimeout(() => { if (isBw) { document.body.classList.remove('print-bw'); } }, 500);
+}
 
         function toggleSection(headerElement) {
             const content = headerElement.nextElementSibling;
@@ -2038,8 +2121,216 @@ auth.onAuthStateChanged(async user => {
                 saveSettings();
             });
         });
+       // =========================================================================
+// --- القسم النهائي والمضبوط للطباعة والتصدير ---
+// =========================================================================
+
+/**
+ * دالة ذكية تحدد أي حاوية جدول هي المعروضة حاليًا
+ */
+function getActiveViewContainer() {
+    return document.querySelector('.view-container[style*="display: block"]');
+}
+
+/**
+ * الوظيفة الرئيسية لزر الطباعة (تطبع العرض الحالي)
+ */
+function printActiveTable() {
+    const activeContainer = getActiveViewContainer();
+    if (!activeContainer) {
+        alert('لا يوجد جدول معروض لطباعته.');
+        return;
+    }
+    
+    // إضافة كلاس مؤقت للحاوية الأب ليتم طباعتها
+    const appContainer = document.getElementById('app-container');
+    appContainer.classList.add('printable-area');
+    
+    const isBw = document.getElementById('printBwCheckbox').checked;
+    if (isBw) document.body.classList.add('print-bw');
+
+    window.print();
+
+    // إزالة الكلاسات بعد الطباعة ليعود الوضع طبيعيًا
+    appContainer.classList.remove('printable-area');
+    if (isBw) document.body.classList.remove('print-bw');
+}
+
+/**
+ * وظيفة تصدير العرض الحالي كملف PDF (باستخدام لقطة شاشة html2canvas)
+ */
+async function exportViewToPDF(viewId, filename) {
+    const targetContainer = document.getElementById(viewId);
+    if (!targetContainer) {
+        alert('لم يتم العثور على العرض المطلوب.');
+        return;
+    }
+
+    const table = targetContainer.querySelector('table');
+    const headerText = targetContainer.querySelector('.schedule-print-header').innerText;
+
+    const canvas = await html2canvas(table, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+    pdf.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    pdf.setFont('Amiri');
+    
+    pdf.setFontSize(18);
+    pdf.text(headerText, pdf.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+    
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth() - 40;
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    
+    pdf.addImage(imgData, 'PNG', 20, 60, pdfWidth, pdfHeight);
+    pdf.save(filename);
+}
+
+/**
+ * [جديد ومصحح] وظيفة احترافية لتصدير جداول كل المعلمين (4 في كل صفحة)
+ */
+async function exportAllTeachersPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    doc.setFont('Amiri');
+
+    const teachers = allTeachers;
+    const teachersPerPage = 4;
+    const pageMargin = 40;
+    const pageWidth = doc.internal.pageSize.getWidth() - (pageMargin * 2);
+    const pageHeight = doc.internal.pageSize.getHeight() - (pageMargin * 2);
+    const boxWidth = pageWidth / 2;
+    const boxHeight = pageHeight / 2;
+
+    for (let i = 0; i < teachers.length; i++) {
+        const pageIndex = Math.floor(i / teachersPerPage);
+        const indexOnPage = i % teachersPerPage;
+
+        if (indexOnPage === 0 && pageIndex > 0) doc.addPage();
+        
+        const teacher = teachers[i];
+        
+        const head = [['اليوم', ...Array.from({ length: scheduleSettings.periodsCount }, (_, k) => `ح${k + 1}`)]];
+        const body = scheduleSettings.days.map(day => {
+            const row = [day];
+            for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
+                const placementKey = Object.keys(placements).find(cardId => {
+                    const pl = placements[cardId];
+                    const card = cards.find(c => c.id === cardId);
+                    const quota = card ? quotas.find(q => q.id === card.quotaId) : null;
+                    return quota && quota.teacherNames.includes(teacher.name) && pl.day === day && pl.period == p;
+                });
+                if (placementKey) {
+                    const card = cards.find(c => c.id === placementKey);
+                    const quota = quotas.find(q => q.id === card.quotaId);
+                    row.push(quota ? `${quota.subject}\n(${quota.classNames.join(',')})` : '');
+                } else {
+                    row.push('');
+                }
+            }
+            return row;
+        });
+
+        const xPos = pageMargin + (indexOnPage % 2 === 0 ? 0 : boxWidth);
+        const yPos = pageMargin + (indexOnPage < 2 ? 0 : boxHeight);
+
+        doc.setFontSize(10);
+        doc.text(`جدول المعلم: ${teacher.name}`, xPos, yPos + 15);
+        
+        doc.autoTable({
+            head: head, body: body, startY: yPos + 20, margin: { left: xPos },
+            tableWidth: boxWidth - 10,
+            styles: { font: 'Amiri', fontSize: 6, cellPadding: 1, halign: 'center' },
+            headStyles: { fillColor: [44, 62, 80] },
+        });
+    }
+    doc.save('جداول_كل_المعلمين.pdf');
+}
+
+/**
+ * [جديد ومصحح] وظيفة احترافية لتصدير الجدول اليومي الكامل (كل يوم في صفحة)
+ */
+async function exportAllDaysPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    doc.setFont('Amiri');
+        
+    for (let i = 0; i < scheduleSettings.days.length; i++) {
+        const day = scheduleSettings.days[i];
+        if (i > 0) doc.addPage();
+
+        doc.setFontSize(16);
+        doc.text(`الجدول اليومي - ${day}`, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+
+        const head = [['الفصل', ...Array.from({ length: scheduleSettings.periodsCount }, (_, k) => `الحصة ${k + 1}`)]];
+        const body = allClasses.map(className => {
+            const row = [className];
+            for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
+                const placementKey = Object.keys(placements).find(cardId => {
+                    const pl = placements[cardId];
+                    const card = cards.find(c => c.id === cardId);
+                    return card && card.classNames.includes(className) && pl.day === day && pl.period == p;
+                });
+                if (placementKey) {
+                    const card = cards.find(c => c.id === placementKey);
+                    const quota = quotas.find(q => q.id === card.quotaId);
+                    row.push(quota ? `${quota.subject}\n(${quota.teacherNames.join(',')})` : '');
+                } else {
+                    row.push('');
+                }
+            }
+            return row;
+        });
+        
+        doc.autoTable({
+            head: head, body: body, startY: 60,
+            styles: { font: 'Amiri', halign: 'center', fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [44, 62, 80] },
+        });
+    }
+    doc.save('الجدول_اليومي_الكامل.pdf');
+}
+
+
+/**
+ * الدالة العامة التي تستدعي الوظيفة المناسبة حسب الصيغة
+ */
+function exportActiveTable(format) {
+    if (userRole !== 'admin') { 
+        document.getElementById('paymentModal').style.display = 'block';
+        return;
+    }
+    const activeContainer = getActiveViewContainer();
+    if(!activeContainer) { alert('لا يوجد جدول ظاهر لتصديره.'); return; }
+
+    const table = activeContainer.querySelector('table');
+    const header = activeContainer.querySelector('.schedule-print-header').innerText;
+    const filenameBase = activeContainer.querySelector('h3')?.innerText || 'جدول';
+
+    if (format === 'excel') exportToExcel(table, header, `${filenameBase}.xlsx`);
+    if (format === 'word') exportToWord(table, header, `${filenameBase}.doc`);
+    if (format === 'pdf') exportViewToPDF(activeContainer.id, `${filenameBase}.pdf`);
+}
+
+// --- ربط كل زر بالوظيفة الصحيحة والدقيقة له ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('printBtn')?.addEventListener('click', printActiveTable);
+    
+    // الأزرار المتخصصة تستدعي الدوال الاحترافية الجديدة
+    document.getElementById('exportTeachersBtn')?.addEventListener('click', exportAllTeachersPDF);
+    document.getElementById('exportDailyBtn')?.addEventListener('click', exportAllDaysPDF);
+    
+    // الأزرار العامة تستدعي الدالة التي تصدر العرض الحالي فقط
+    document.getElementById('excelBtn')?.addEventListener('click', () => exportActiveTable('excel'));
+    document.getElementById('wordBtn')?.addEventListener('click', () => exportActiveTable('word'));
+    document.getElementById('pdfBtn')?.addEventListener('click', () => exportActiveTable('pdf'));
+});
     </script>
+
 </body>
 </html>
-"
-
