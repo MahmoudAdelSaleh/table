@@ -767,7 +767,6 @@
     renderClassesList();
     renderSubjectsList();
     renderTeachersList();
-    // populateDropdowns(); // << سنقوم بتعطيلها من هنا
     renderQuotaTable();
     renderGeneralClassView();
     renderGeneralTeacherView();
@@ -775,11 +774,14 @@
     renderUnassignedCards();
     updatePrintHeaders();
 
+    // ▼▼▼ هذا هو السطر الذي يجب إضافته ▼▼▼
+    populateSelectors(); // لملء قوائم عرض الجداول (الفصل، المعلم، اليوم)
+
     // 2. ... ثم نؤجل ملء القوائم المنسدلة إلى آخر لحظة ممكنة
     setTimeout(function() {
         console.log("Now, for real, populating the dropdowns!");
-        populateDropdowns();
-    }, 0); // التأخير صفر يعني "نفذ هذا بمجرد أن تنتهي من كل شيء آخر"
+        populateDropdowns(); // هذه الدالة خاصة بقوائم قسم "إدارة الأنصبة" وستبقى تعمل كما هي
+    }, 0); 
 }
 
         function initializeSettingsForm() {
@@ -2244,4 +2246,5 @@ async function exportAllDaysPDF() {
 </body>
 </html>
 "
+
 
