@@ -333,6 +333,15 @@
     .text-display { display: flex !important; }
     th, td { font-size: 8pt !important; }
 }
+/* لإخفاء كل الأزرار في شريط التصدير بشكل افتراضي */
+.export-buttons-group > * {
+  display: none;
+}
+/* لإظهار زري PDF و Excel فقط */
+.export-buttons-group #pdfBtn,
+.export-buttons-group #excelBtn {
+  display: block;
+}     
     </style>
 </head>
 <body>
