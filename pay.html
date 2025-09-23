@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>متجر شامل</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <style>
+    body { font-family: 'Arial'; direction: rtl; background: #f9f9f9; padding: 20px; }
+    h2 { color: #333; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
+    input, button, textarea { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+    .chat-box { height: 200px; overflow-y: scroll; background: #eee; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+    .product { background: #f0f0f0; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    img { max-width: 100%; border-radius: 5px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🛍️ المنتجات</h2>
+    <div class="product">منتج 1 - 100 جنيه <button onclick="startChat('منتج 1')">اطلب الآن</button></div>
+    <div class="product">منتج 2 - 150 جنيه <button onclick="startChat('منتج 2')">اطلب الآن</button></div>
+
+    <h2>🔐 تسجيل / دخول</h2>
+    <input type="text" id="name" placeholder="الاسم الكامل">
+    <input type="email" id="email" placeholder="البريد الإلكتروني">
+    <input type="password" id="password" placeholder="كلمة المرور">
+    <button onclick="register()">تسجيل جديد</button>
+    <button onclick="login()">تسجيل دخول</button>
+
+    <h2>💬 دردشة مع المدير</h2>
+    <div class="chat-box" id="chatBox"></div>
+    <textarea id="message" placeholder="اكتب رسالتك..."></textarea>
+    <button onclick="sendMessage()">📨 إرسال رسالة</button>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="sendImage()">📷 إرسال صورة</button>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+     apiKey: "AIzaSyCCEHZIqOdjXbEgvt49TzdeqYTm0cO3jro",
+  authDomain: "table-2026.firebaseapp.com",
+  projectId: "table-2026",
+  storageBucket: "table-2026.firebasestorage.app",
+  messagingSenderId: "860273541011",
+  appId: "1:860273541011:web:062d547802dd3cddc1b266",
+  measurementId: "G-TWKVJFF97J"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    let currentProduct = "";
+
+    function startChat(product) {
+      currentProduct = product;
+      document.getElementById("message").value = `أرغب في شراء ${product}`;
+    }
+
+    function register() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const name = document.getElementById("name").value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(user => {
+          db.collection("users").doc(user.user.uid).set({ name, email });
+          alert("✅ تم التسجيل بنجاح");
+        })
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => alert("✅ تم تسجيل الدخول"))
+        .catch(err => alert("❌ " + err.message));
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById("message").value;
+      const user = auth.currentUser;
+      if (!user) return alert("❗ يجب تسجيل الدخول أولاً");
+      db.collection("messages").add({
+        sender: user.email,
+        receiver: "admin",
+        product: currentProduct,
+        message: msg,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById("message").value = "";
+    }
+
+    function sendImage() {
+      const file = document.getElementById("imageInput").files[0];
+      const user = auth.currentUser;
+      if (!user || !file) return alert("❗ يجب تسجيل الدخول واختيار صورة");
+
+      const storageRef = storage.ref(`images/${user.uid}/${Date.now()}_${file.name}`);
+      storageRef.put(file).then(snapshot => {
+        snapshot.ref.getDownloadURL().then(url => {
+          db.collection("messages").add({
+            sender: user.email,
+            receiver: "admin",
+            imageUrl: url,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          alert("✅ تم إرسال الصورة");
+        });
+      }).catch(err => alert("❌ فشل رفع الصورة: " + err.message));
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        db.collection("messages")
+          .where("sender", "==", user.email)
+          .orderBy("timestamp")
+          .onSnapshot(snapshot => {
+            const chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = "";
+            snapshot.forEach(doc => {
+              const data = doc.data();
+              if (data.message) {
+                chatBox.innerHTML += `<div><strong>أنت:</strong> ${data.message}</div>`;
+              }
+              if (data.imageUrl) {
+                chatBox.innerHTML += `<div><strong>📷 صورة:</strong><br><img src="${data.imageUrl}" width="150"></div>`;
+              }
+            });
+          });
+      }
+    });
+  </script>
+</body>
+</html>
