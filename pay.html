@@ -1,139 +1,433 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>متجر شامل</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-  <style>
-    body { font-family: 'Arial'; direction: rtl; background: #f9f9f9; padding: 20px; }
-    h2 { color: #333; }
-    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
-    input, button, textarea { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-    .chat-box { height: 200px; overflow-y: scroll; background: #eee; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
-    .product { background: #f0f0f0; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-    img { max-width: 100%; border-radius: 5px; margin-top: 5px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>🛍️ المنتجات</h2>
-    <div class="product">منتج 1 - 100 جنيه <button onclick="startChat('منتج 1')">اطلب الآن</button></div>
-    <div class="product">منتج 2 - 150 جنيه <button onclick="startChat('منتج 2')">اطلب الآن</button></div>
-
-    <h2>🔐 تسجيل / دخول</h2>
-    <input type="text" id="name" placeholder="الاسم الكامل">
-    <input type="email" id="email" placeholder="البريد الإلكتروني">
-    <input type="password" id="password" placeholder="كلمة المرور">
-    <button onclick="register()">تسجيل جديد</button>
-    <button onclick="login()">تسجيل دخول</button>
-
-    <h2>💬 دردشة مع المدير</h2>
-    <div class="chat-box" id="chatBox"></div>
-    <textarea id="message" placeholder="اكتب رسالتك..."></textarea>
-    <button onclick="sendMessage()">📨 إرسال رسالة</button>
-    <input type="file" id="imageInput" accept="image/*">
-    <button onclick="sendImage()">📷 إرسال صورة</button>
-  </div>
-
-  <script>
-    const firebaseConfig = {
-     apiKey: "AIzaSyCCEHZIqOdjXbEgvt49TzdeqYTm0cO3jro",
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>متجر شامل - محادثة مباشرة</title>
+  
+  <!-- استيراد وحدات Firebase SDK الحديثة -->
+  <script type="module">
+    // هام: استبدل هذه البيانات ببيانات مشروعك الخاصة من Firebase
+   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCCEHZIqOdjXbEgvt49TzdeqYTm0cO3jro",
   authDomain: "table-2026.firebaseapp.com",
+  databaseURL: "https://table-2026-default-rtdb.firebaseio.com",
   projectId: "table-2026",
   storageBucket: "table-2026.firebasestorage.app",
   messagingSenderId: "860273541011",
   appId: "1:860273541011:web:062d547802dd3cddc1b266",
   measurementId: "G-TWKVJFF97J"
 };
+    // استيراد الوظائف التي نحتاجها فقط من Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
+    // تهيئة خدمات Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    
+    // تعريف متغيرات لعناصر واجهة المستخدم
+    const authContainer = document.getElementById('authContainer');
+    const appContainer = document.getElementById('appContainer');
+    const chatContainer = document.getElementById('chatContainer');
+    const statusMessage = document.getElementById('statusMessage');
+    const chatBox = document.getElementById('chatBox');
+    const welcomeUser = document.getElementById('welcomeUser');
 
     let currentProduct = "";
+    let unsubscribeChat; // متغير لإيقاف الاستماع للمحادثة الحالية عند بدء محادثة جديدة
 
-    function startChat(product) {
-      currentProduct = product;
-      document.getElementById("message").value = `أرغب في شراء ${product}`;
+    // دالة لعرض رسائل الحالة للمستخدم بدلاً من alert()
+    function showStatus(message, isError = false) {
+        statusMessage.textContent = message;
+        statusMessage.className = isError ? 'status-error' : 'status-success';
+        statusMessage.style.display = 'block';
+        setTimeout(() => { statusMessage.style.display = 'none'; }, 4000);
     }
-
-    function register() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const name = document.getElementById("name").value;
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(user => {
-          db.collection("users").doc(user.user.uid).set({ name, email });
-          alert("✅ تم التسجيل بنجاح");
-        })
-        .catch(err => alert("❌ " + err.message));
-    }
-
-    function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, password)
-        .then(() => alert("✅ تم تسجيل الدخول"))
-        .catch(err => alert("❌ " + err.message));
-    }
-
-    function sendMessage() {
-      const msg = document.getElementById("message").value;
-      const user = auth.currentUser;
-      if (!user) return alert("❗ يجب تسجيل الدخول أولاً");
-      db.collection("messages").add({
-        sender: user.email,
-        receiver: "admin",
-        product: currentProduct,
-        message: msg,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      document.getElementById("message").value = "";
-    }
-
-    function sendImage() {
-      const file = document.getElementById("imageInput").files[0];
-      const user = auth.currentUser;
-      if (!user || !file) return alert("❗ يجب تسجيل الدخول واختيار صورة");
-
-      const storageRef = storage.ref(`images/${user.uid}/${Date.now()}_${file.name}`);
-      storageRef.put(file).then(snapshot => {
-        snapshot.ref.getDownloadURL().then(url => {
-          db.collection("messages").add({
-            sender: user.email,
-            receiver: "admin",
-            imageUrl: url,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          alert("✅ تم إرسال الصورة");
-        });
-      }).catch(err => alert("❌ فشل رفع الصورة: " + err.message));
-    }
-
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        db.collection("messages")
-          .where("sender", "==", user.email)
-          .orderBy("timestamp")
-          .onSnapshot(snapshot => {
-            const chatBox = document.getElementById("chatBox");
-            chatBox.innerHTML = "";
-            snapshot.forEach(doc => {
-              const data = doc.data();
-              if (data.message) {
-                chatBox.innerHTML += `<div><strong>أنت:</strong> ${data.message}</div>`;
-              }
-              if (data.imageUrl) {
-                chatBox.innerHTML += `<div><strong>📷 صورة:</strong><br><img src="${data.imageUrl}" width="150"></div>`;
-              }
-            });
-          });
-      }
+    
+    // التحكم في واجهة المستخدم بناءً على حالة تسجيل الدخول
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            authContainer.style.display = 'none';
+            appContainer.style.display = 'block';
+            chatContainer.style.display = 'none';
+            welcomeUser.textContent = `مرحباً، ${user.displayName || user.email}`;
+        } else {
+            authContainer.style.display = 'block';
+            appContainer.style.display = 'none';
+            if (unsubscribeChat) unsubscribeChat(); // إيقاف أي استماع نشط للرسائل عند تسجيل الخروج
+        }
     });
+
+    // تسجيل مستخدم جديد
+    window.register = async () => {
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        if (!name || !email || !password) return showStatus("يرجى ملء جميع الحقول", true);
+        
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            // تحديث ملف المستخدم لإضافة الاسم
+            await updateProfile(userCredential.user, { displayName: name });
+            // حفظ بيانات المستخدم الإضافية في Firestore
+            await setDoc(doc(db, "users", userCredential.user.uid), { name, email });
+            showStatus("✅ تم التسجيل بنجاح! جارٍ تسجيل الدخول...");
+        } catch (error) {
+            showStatus(`❌ ${error.code.replace('auth/', '')}`, true);
+        }
+    };
+    
+    // تسجيل الدخول
+    window.login = async () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        if (!email || !password) return showStatus("يرجى إدخال البريد الإلكتروني وكلمة المرور", true);
+        
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            showStatus(`❌ ${error.code.replace('auth/', '')}`, true);
+        }
+    };
+
+    // تسجيل الخروج
+    window.logout = async () => {
+        await signOut(auth);
+    };
+
+    // بدء محادثة لمنتج معين
+    window.startChat = (productName) => {
+        currentProduct = productName;
+        document.getElementById("chatTitle").textContent = `محادثة بخصوص: ${productName}`;
+        document.getElementById("message").value = `مرحباً، أرغب في طلب "${productName}".`;
+        chatContainer.style.display = 'block';
+        
+        // أهم تعديل: بدء الاستماع للرسائل الخاصة بهذا المنتج والمستخدم
+        const user = auth.currentUser;
+        if (user) {
+            listenToMessages(user, productName);
+        }
+    };
+
+    // دالة لإرسال رسالة (نص أو صورة)
+    async function submitMessage(payload) {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        try {
+            await addDoc(collection(db, "messages"), {
+                ...payload, // محتوى الرسالة (نص أو رابط صورة)
+                product: currentProduct,
+                senderId: user.uid,
+                // ** تعديل مهم: إضافة المشاركين في المحادثة لتسهيل الاستعلام **
+                participants: [user.uid, 'admin'], 
+                timestamp: serverTimestamp()
+            });
+            return true;
+        } catch (error) {
+            showStatus("❌ فشل إرسال الرسالة", true);
+            return false;
+        }
+    }
+
+    // إرسال رسالة نصية
+    window.sendMessage = async () => {
+        const msgText = document.getElementById("message").value;
+        if (!msgText.trim()) return;
+
+        const success = await submitMessage({ text: msgText });
+        if (success) {
+            document.getElementById("message").value = "";
+        }
+    };
+
+    // إرسال صورة
+    window.sendImage = async () => {
+        const file = document.getElementById("imageInput").files[0];
+        const user = auth.currentUser;
+        if (!user || !file) return showStatus("❗ يجب اختيار صورة أولاً", true);
+        
+        const uploadLabel = document.querySelector('label[for="imageInput"]');
+        uploadLabel.textContent = '⏳'; // تغيير الأيقونة للإشارة إلى الرفع
+
+        const storageRef = ref(storage, `chat_images/${user.uid}/${Date.now()}_${file.name}`);
+        try {
+            const snapshot = await uploadBytes(storageRef, file);
+            const imageUrl = await getDownloadURL(snapshot.ref);
+            
+            const success = await submitMessage({ imageUrl: imageUrl });
+            if (success) {
+                document.getElementById("imageInput").value = null;
+                showStatus("✅ تم إرسال الصورة بنجاح");
+            }
+        } catch (error) {
+             showStatus(`❌ فشل رفع الصورة: ${error.message}`, true);
+        } finally {
+            uploadLabel.textContent = '📷'; // إعادة الأيقونة لحالتها الطبيعية
+        }
+    };
+
+    // الاستماع للرسائل بشكل حي
+    function listenToMessages(user, productName) {
+        // إيقاف الاستماع للمحادثة السابقة أولاً لتجنب تداخل البيانات
+        if (unsubscribeChat) {
+            unsubscribeChat();
+        }
+
+        // ** تعديل جوهري: الاستعلام عن كل الرسائل التي يشارك فيها المستخدم والأدمن لنفس المنتج **
+        const q = query(
+            collection(db, "messages"),
+            where("product", "==", productName),
+            where("participants", "array-contains", user.uid),
+            orderBy("timestamp", "asc")
+        );
+        
+        unsubscribeChat = onSnapshot(q, (querySnapshot) => {
+            chatBox.innerHTML = ''; // مسح الرسائل القديمة قبل عرض المحدثة
+            querySnapshot.forEach((doc) => {
+                displayMessage(doc.data(), user.uid);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight; // التمرير لأسفل دائمًا
+        }, (error) => {
+            console.error("Error listening to messages: ", error);
+            showStatus("حدث خطأ في جلب الرسائل", true);
+        });
+    }
+
+    // عرض رسالة واحدة في صندوق الدردشة
+    function displayMessage(data, currentUserId) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message');
+
+        // تحديد هل الرسالة مرسلة (من المستخدم) أم مستلمة (من المدير)
+        msgDiv.classList.add(data.senderId === currentUserId ? 'sent' : 'received');
+        
+        let content = '';
+        if (data.text) {
+            // استخدام textContent للحماية من ثغرات XSS
+            const p = document.createElement('p');
+            p.textContent = data.text;
+            content = p.outerHTML;
+        }
+        if (data.imageUrl) {
+            content = `<img src="${data.imageUrl}" alt="صورة مرسلة" onclick="window.open('${data.imageUrl}', '_blank')">`;
+        }
+        
+        const timestamp = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
+        msgDiv.innerHTML = `${content}<span class="timestamp">${timestamp}</span>`;
+        
+        chatBox.appendChild(msgDiv);
+    }
   </script>
+
+  <style>
+    :root {
+      --primary-color: #007bff;
+      --secondary-color: #6c757d;
+      --bg-color: #f8f9fa;
+      --surface-color: #ffffff;
+      --text-color: #333;
+      --border-color: #dee2e6;
+      --sent-bg: #007bff;
+      --received-bg: #e9ecef;
+    }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      direction: rtl; 
+      background-color: var(--bg-color); 
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    .container { 
+      width: 100%;
+      max-width: 500px; 
+      background: var(--surface-color); 
+      padding: 25px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease-in-out;
+    }
+    h2, h3 { 
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-top: 0;
+    }
+    input, textarea { 
+      width: 100%; 
+      margin-bottom: 12px; 
+      padding: 12px; 
+      border-radius: 8px; 
+      border: 1px solid var(--border-color); 
+      box-sizing: border-box;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      font-size: 1rem;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+    }
+    button {
+      padding: 12px 18px;
+      border-radius: 8px;
+      border: none;
+      color: white;
+      background-color: var(--primary-color);
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .btn-secondary { background-color: var(--secondary-color); }
+    .btn-secondary:hover { background-color: #5a6268; }
+    .btn-danger { background-color: #dc3545; }
+    .btn-danger:hover { background-color: #c82333; }
+    .product { 
+      background: #fdfdfd; 
+      padding: 15px; 
+      margin-bottom: 10px; 
+      border-radius: 8px; 
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-box { 
+      height: 300px; 
+      overflow-y: auto; 
+      background: #f1f1f1; 
+      padding: 15px; 
+      border-radius: 8px; 
+      margin-bottom: 10px; 
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .message {
+        padding: 8px 12px;
+        border-radius: 18px;
+        max-width: 80%;
+        word-wrap: break-word;
+        line-height: 1.4;
+    }
+    .message.sent {
+        background-color: var(--sent-bg);
+        color: white;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+    }
+    .message.received {
+        background-color: var(--received-bg);
+        color: var(--text-color);
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+    }
+    .message p { margin: 0; }
+    .message img {
+        max-width: 100%;
+        border-radius: 10px;
+        margin-top: 5px;
+        cursor: pointer;
+    }
+    .timestamp {
+        font-size: 0.75em;
+        color: rgba(255,255,255,0.7);
+        display: block;
+        text-align: left;
+        margin-top: 4px;
+    }
+    .received .timestamp {
+        color: #666;
+    }
+    #statusMessage {
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: bold;
+        display: none;
+    }
+    .status-success { background-color: #d4edda; color: #155724; }
+    .status-error { background-color: #f8d7da; color: #721c24; }
+    .input-group { display: flex; gap: 10px; }
+    .input-group input[type="file"] { display: none; }
+    .input-group label {
+        padding: 12px;
+        border-radius: 8px;
+        background-color: var(--secondary-color);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .user-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- حاوية المصادقة (تسجيل الدخول / جديد) -->
+  <div id="authContainer" class="container">
+    <h2>🔐 تسجيل الدخول أو إنشاء حساب</h2>
+    <div id="statusMessage"></div>
+    <input type="text" id="name" placeholder="الاسم الكامل (للتسجيل الجديد)">
+    <input type="email" id="email" placeholder="البريد الإلكتروني" required>
+    <input type="password" id="password" placeholder="كلمة المرور" required>
+    <div class="input-group">
+        <button onclick="register()">تسجيل جديد</button>
+        <button onclick="login()" class="btn-secondary">تسجيل دخول</button>
+    </div>
+  </div>
+
+  <!-- حاوية التطبيق الرئيسية (تظهر بعد تسجيل الدخول) -->
+  <div id="appContainer" class="container" style="display: none;">
+    <div class="user-header">
+        <h3 id="welcomeUser"></h3>
+        <button onclick="logout()" class="btn-danger">تسجيل الخروج</button>
+    </div>
+
+    <h2>🛍️ المنتجات المتاحة</h2>
+    <div class="product">
+        <span>منتج 1 - 100 جنيه</span>
+        <button onclick="startChat('منتج 1')">اطلب الآن</button>
+    </div>
+    <div class="product">
+        <span>منتج 2 - 150 جنيه</span>
+        <button onclick="startChat('منتج 2')">اطلب الآن</button>
+    </div>
+
+    <!-- حاوية الدردشة (تظهر عند اختيار منتج) -->
+    <div id="chatContainer" style="display: none; margin-top: 20px;">
+        <h3 id="chatTitle"></h3>
+        <div class="chat-box" id="chatBox"></div>
+        <textarea id="message" placeholder="اكتب رسالتك..."></textarea>
+        <div class="input-group">
+            <button onclick="sendMessage()" style="flex-grow: 1;">📨 إرسال</button>
+            <input type="file" id="imageInput" accept="image/*" onchange="sendImage()">
+            <label for="imageInput">📷</label>
+        </div>
+    </div>
+  </div>
+
 </body>
 </html>
