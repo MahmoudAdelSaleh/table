@@ -1,89 +1,2352 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظم جدول الحصص المدرسي العام</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- Libraries for Exporting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --light-gray: #ecf0f1;
+            --medium-gray: #bdc3c7;
+            --white: #fff;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #2ecc71;
+            --copy-color: #9b59b6;
+            --conflict-color-glow: rgba(255, 82, 82, 0.7);
+            --base-font-size: 14px;
+            --first-column-width: 100px;
+            --data-column-width: 85px;
+            --data-row-height: 85px;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            font-size: var(--base-font-size);
+        }
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/12.3.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/12.3.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/12.3.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/12.3.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/12.3.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/12.3.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/12.3.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/12.3.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/12.3.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/12.3.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+        .container, .auth-container {
+            max-width: 95%;
+            margin: auto;
+            background: var(--white);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
+        h1, h2, h3, h4 {
+            text-align: center;
+            color: var(--secondary-color);
+        }
+        h2 {
+             border-bottom: 2px solid var(--primary-color);
+             padding-bottom: 10px;
+             margin-bottom: 25px;
+        }
+
+        .management-section {
+            background-color: var(--light-gray);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            align-items: start;
+        }
+        
+        .data-management-grid {
+             display: grid;
+             grid-template-columns: repeat(3, 1fr);
+             gap: 30px;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: block;
+            color: #34495e;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--medium-gray);
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+        
+        select[multiple] {
+            height: 120px;
+            padding: 5px;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+            outline: none;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        button:hover { background-color: #2980b9; }
+        button.edit-btn { background-color: var(--warning-color); padding: 5px 10px; font-size: 0.9em; margin: 0; }
+        button.edit-btn:hover { background-color: #e67e22; }
+        button.delete-btn { background-color: var(--danger-color); padding: 5px 10px; font-size: 0.9em; margin: 0;}
+        button.delete-btn:hover { background-color: #c0392b; }
+        button.cancel-btn { background-color: var(--medium-gray); }
+        button.cancel-btn:hover { background-color: #95a5a6; }
+        button.copy-btn { background-color: var(--copy-color); padding: 5px 10px; font-size: 0.9em; margin: 0;}
+        button.copy-btn:hover { background-color: #8e44ad; }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 0; 
+            border: 3px solid var(--secondary-color);
+        }
+        th, td { border: 1px solid #ddd; padding: 2px; text-align: center; vertical-align: middle; }
+        
+        .main-schedule-container table { table-layout: fixed; }
+        .main-schedule-container th:first-child, .main-schedule-container td:first-child { 
+            width: var(--first-column-width); 
+            white-space: normal; 
+            word-break: break-word; 
+            padding: 0 10px;
+            border-left: 3px solid var(--secondary-color) !important;
+        }
+        .main-schedule-container th:not(:first-child), .main-schedule-container td:not(:first-child),
+        #dailyScheduleTable th, #dailyScheduleTable td,
+        #singleClassScheduleTable th, #singleClassScheduleTable td,
+        #singleTeacherScheduleTable th, #singleTeacherScheduleTable td {
+            width: var(--data-column-width); 
+            height: var(--data-row-height); 
+        }
+        
+        th { background-color: var(--secondary-color); color: var(--white); position: sticky; top: 0; z-index: 2; }
+        .main-schedule-container th:first-child { position: sticky; right: 0; z-index: 3; }
+        .main-schedule-container td:first-child { font-weight: bold; background-color: var(--light-gray); position: sticky; right: 0; z-index: 1; }
+        
+        .card {
+            background-color: var(--primary-color); color: var(--white);
+            border-radius: 6px; cursor: grab;
+            font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-align: center; overflow: hidden; white-space: normal;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            width: 90%; height: 90%; box-sizing: border-box; padding: 2px;
+            font-size: var(--base-font-size); line-height: 1.2;
+            transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.3s;
+        }
+        .unassigned-card {
+            width: 75px; height: 75px;
+            margin: 4px; display: inline-flex;
+        }
+        .card:active, .card.dragging { 
+            cursor: grabbing; 
+            opacity: 0.5; 
+            transform: scale(0.95);
+        }
+        
+        .available-slot { box-shadow: inset 0 0 15px 5px rgba(76, 175, 80, 0.6); }
+        .unavailable-slot { box-shadow: inset 0 0 15px 5px rgba(244, 67, 54, 0.6); }
+        .conflict-slot { box-shadow: inset 0 0 15px 5px var(--conflict-color-glow); }
+
+        #unassigned-cards-container {
+            background-color: #e8eaf6; border: 2px dashed var(--primary-color); border-radius: 8px;
+            padding: 10px; margin-top: 20px; min-height: 90px; display: flex;
+            flex-wrap: wrap; align-content: flex-start;
+        }
+
+        .data-list { list-style-type: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; margin-top: 10px; }
+        .data-list li { padding: 8px; border-bottom: 1px solid #eee; }
+        .data-list li:last-child { border-bottom: none; }
+
+        .view-controls-flex { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end;}
+        .view-control-group { display: flex; align-items: center; gap: 5px; }
+        .view-control-group select { width: 180px; }
+        .icon-btn { width: 45px; height: 45px; padding: 0; display: flex; justify-content: center; align-items: center; }
+        .icon-btn svg { width: 24px; height: 24px; fill: white; }
+
+        .view-container { display: none; }
+        .active-view-btn { background-color: #2980b9; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+
+        .schedule-print-header { display: none; text-align: center; margin-bottom: 20px; }
+        .schedule-print-header h3 { margin: 0; }
+        .schedule-print-header p { margin: 2px 0; }
+        
+        .day-divider { border-right: 3px solid var(--secondary-color) !important; }
+
+        .text-display { display: none; font-size: var(--base-font-size); }
+        
+        body.text-mode .card { display: none; }
+        body.text-mode .text-display {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            width: 100%; height: 100%; line-height: 1.2;
+            text-align: center; word-wrap: break-word; color: black;
+        }
+
+        body.colors-off .card {
+            background-color: var(--light-gray) !important;
+            color: var(--secondary-color) !important;
+            border: 1px solid var(--medium-gray);
+        }
+        body.colors-off .text-display {
+            background-color: transparent !important;
+            color: black !important;
+        }
+        
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe; margin: 5% auto; padding: 20px;
+            border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 10px;
+        }
+        .modal-close-btn { color: #aaa; float: left; font-size: 28px; font-weight: bold; cursor: pointer; }
+        #teacherAvailabilityGrid td, #teacherAvailabilityGrid th { height: 40px; width: 40px; cursor: pointer; font-size: 1.2em; }
+        #teacherAvailabilityGrid td.available { background-color: #d4edda; color: #155724; }
+        #teacherAvailabilityGrid td.unavailable { background-color: #f8d7da; color: #721c24; }
+        #editTeacherSubjectsCheckboxes label { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        #editTeacherSubjectsCheckboxes input[type="checkbox"] { width: auto; height: auto; }
+
+        #app-container { display: none; }
+        .auth-container { max-width: 400px; margin: 5% auto; }
+        .auth-form { display: flex; flex-direction: column; gap: 15px; }
+        .auth-toggle { color: var(--primary-color); cursor: pointer; text-align: center; margin-top: 10px; }
+        #user-info { text-align: left; padding: 10px; }
+
+        .toggle-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .toggle-icon { font-size: 1.5em; font-weight: bold; }
+        .quota-table-container { max-height: 520px; overflow-y: auto; }
+        #teacher-stats ul { list-style-type: none; padding: 0; column-count: 3; }
+
+        .action-buttons-group, .export-buttons-group { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .action-buttons-group button, .export-buttons-group button { flex: 1; min-width: 120px; }
+        .action-buttons-group button:nth-child(1) { background-color: var(--success-color); }
+        .action-buttons-group button:nth-child(2) { background-color: var(--warning-color); }
+        .action-buttons-group button:nth-child(3) { background-color: var(--copy-color); }
+        .export-buttons-group button:nth-child(1) { background-color: #1e3a59; }
+        .export-buttons-group button:nth-child(2) { background-color: #c0392b; }
+        .export-buttons-group button:nth-child(3) { background-color: #27ae60; }
+        .export-buttons-group button:nth-child(4) { background-color: #2980b9; }
+
+        .table-display-options { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: center; margin-top: 10px; }
+        .table-display-options .option-group { display: flex; gap: 5px; align-items: center; }
+        .table-display-options button { padding: 5px 10px; font-size: 0.9em; width: auto; }
+        
+        @media (max-width: 768px) {
+            .data-management-grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            h1 { font-size: 1.5em; }
+            h2 { font-size: 1.2em; }
+            #teacher-stats ul { column-count: 1; }
+        }
+
+        /* ==========================================================================
+   --- كود الطباعة الاحترافي ---
+   ========================================================================== */
+@media print {
+    /* --- إعدادات الصفحة --- */
+    @page {
+        size: A4 landscape; /* تحديد حجم الصفحة A4 وبالعرض */
+        margin: 1cm;      /* هوامش الصفحة */
+    }
+
+    /* --- إخفاء العناصر غير المرغوب فيها --- */
+    body > *:not(.printable-area) {
+        display: none !important;
+    }
+    .no-print, .modal, #user-info {
+        display: none !important;
+    }
+    
+    /* --- إظهار وتنسيق العناصر المراد طباعتها --- */
+    body {
+        padding: 0;
+        margin: 0;
+        --base-font-size: 10px; /* تصغير حجم الخط الأساسي للطباعة */
+    }
+    .printable-area {
+        display: block !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+    }
+    .container {
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .schedule-print-header {
+        display: block !important; /* إظهار رأس الطباعة */
+    }
+
+    /* --- التحكم في فواصل الصفحات (أهم جزء) --- */
+    /* ابدأ صفحة جديدة قبل كل صف أو معلم في الجداول العامة */
+    .page-break-before {
+        page-break-before: always !important;
+    }
+    /* لا تبدأ بصفحة فارغة */
+    tr.page-break-before:first-child {
+        page-break-before: avoid !important;
+    }
+    
+    /* --- تنسيق الجداول للطباعة --- */
+    table {
+        width: 100% !important;
+        page-break-inside: avoid; /* محاولة إبقاء الجدول في صفحة واحدة */
+    }
+    .card { display: none !important; }
+    .text-display { display: flex !important; }
+    th, td { font-size: 8pt !important; }
+}
+/* لإخفاء كل الأزرار في شريط التصدير بشكل افتراضي */
+.export-buttons-group > * {
+  display: none;
+}
+/* لإظهار زري PDF و Excel فقط */
+.export-buttons-group #pdfBtn,
+.export-buttons-group #excelBtn {
+  display: block;
+}     
     </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+</head>
+<body>
+    <div id="print-header" style="display: none; text-align: center; margin-bottom: 20px;">
+    <h2 id="print-school-name"></h2>
+    <p id="print-title"></p>
+</div>
+
+<div id="print-footer" style="display: none; text-align: center; margin-top: 20px; position: fixed; bottom: 0; width: 100%;">
+    <p>مسئول الجدول: <span id="print-scheduler-name"></span></p>
+</div>
+    <div id="auth-container" class="auth-container">
+        <div id="login-view">
+            <h2>تسجيل الدخول</h2>
+            <form id="login-form" class="auth-form">
+                <input type="email" id="login-email" placeholder="البريد الإلكتروني" required>
+                <input type="password" id="login-password" placeholder="كلمة المرور" required>
+                <button type="submit">دخول</button>
+            </form>
+            <p class="auth-toggle">ليس لديك حساب؟ قم بإنشاء حساب جديد</p>
+        </div>
+        <div id="signup-view" style="display: none;">
+            <h2>إنشاء حساب جديد</h2>
+            <form id="signup-form" class="auth-form">
+                <input type="email" id="signup-email" placeholder="البريد الإلكتروني" required>
+                <input type="password" id="signup-password" placeholder="كلمة المرور" required>
+                <input type="tel" id="phone" placeholder="رقم الهاتف" required>
+                <input type="text" id="username" placeholder="اسم المستخدم" required>
+                <button type="submit">إنشاء حساب</button>
+            </form>
+            <p class="auth-toggle">لديك حساب بالفعل؟ قم بتسجيل الدخول</p>
+        </div>
+        <p id="auth-error" style="color: var(--danger-color); text-align: center;"></p>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+
+    <div id="app-container">
+        <div id="user-info" class="no-print">
+            <span id="user-email"></span> | <button id="logout-btn" style="width: auto; padding: 5px 10px; font-size: 0.9em;">تسجيل الخروج</button>
+        </div>
+        <div class="container">
+            <h1>منظم جدول الحصص المدرسي العام</h1>
+
+            <!-- قسم الإعدادات العامة -->
+            <div class="management-section no-print">
+                <h2>الإعدادات العامة</h2>
+                <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+                    <div><label for="schoolName">اسم المدرسة</label><input type="text" id="schoolName"></div>
+                    <div><label for="academicYear">العام الدراسي</label><input type="text" id="academicYear"></div>
+                    <div><label for="schedulerName">مسئول الجدول</label><input type="text" id="schedulerName"></div>
+                    <div><label for="daysCount">أيام الدراسة</label><input type="number" id="daysCount" min="1" max="7"></div>
+                    <div><label for="periodsCount">حصص اليوم</label><input type="number" id="periodsCount" min="1" max="10"></div>
+                    <div><label for="startDay">بداية الأسبوع</label><select id="startDay"></select></div>
+                    <div><label for="breakAfterPeriod">فسحة بعد الحصة رقم</label><input type="number" id="breakAfterPeriod" min="0"></div>
+                    <div><label for="periodDuration">مدة الحصة (دقيقة)</label><input type="number" id="periodDuration" min="1"></div>
+                    <div><label for="startTime">وقت بدء اليوم الدراسي</label><input type="time" id="startTime"></div>
+                </div>
+                 <div style="text-align: center; margin-top: 20px;">
+                    <button id="updateSettingsBtn">حفظ وتطبيق الإعدادات</button>
+                </div>
+            </div>
+
+            <!-- قسم إدارة البيانات الأساسية -->
+            <div class="management-section no-print">
+                <h2>إدارة البيانات الأساسية</h2>
+                <div class="data-management-grid">
+                    <div>
+                        <h4>إدارة الفصول</h4>
+                        <form id="addClassForm">
+                            <input type="hidden" id="editingClassName">
+                            <label for="newClassName">اسم الفصل</label>
+                            <input type="text" id="newClassName" placeholder="مثال: 1/1" required>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <button type="submit" id="addClassBtn" style="flex: 2;">إضافة فصل</button>
+                                <button type="button" class="cancel-btn" id="cancelClassEditBtn" style="flex: 1; display: none;">إلغاء</button>
+                            </div>
+                        </form>
+                        <ul id="classesList" class="data-list"></ul>
+                    </div>
+                    <div>
+                        <h4>إدارة المواد</h4>
+                        <form id="addSubjectForm">
+                            <input type="hidden" id="editingSubjectName">
+                            <label for="newSubjectName">اسم المادة</label>
+                            <input type="text" id="newSubjectName" placeholder="مثال: فيزياء" required>
+                            <label for="newSubjectPeriods">الحصص الافتراضية</label>
+                            <input type="number" id="newSubjectPeriods" min="1" value="4" required>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <button type="submit" id="addSubjectBtn" style="flex: 2;">إضافة مادة</button>
+                                <button type="button" class="cancel-btn" id="cancelSubjectEditBtn" style="flex: 1; display: none;">إلغاء</button>
+                            </div>
+                        </form>
+                        <ul id="subjectsList" class="data-list"></ul>
+                    </div>
+                    <div>
+                        <h4>إدارة المعلمين</h4>
+                        <form id="addTeacherForm">
+                             <label for="newTeacherName">اسم المعلم</label>
+                             <input type="text" id="newTeacherName" placeholder="مثال: أ. أحمد علي" required>
+                             <p>لتحديد المواد وأوقات التواجد، اضغط على "تعديل" بعد إضافة المعلم.</p>
+                             <button type="submit" id="addTeacherBtn">إضافة معلم</button>
+                        </form>
+                        <ul id="teachersList" class="data-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قسم إدارة الأنصبة -->
+            <div class="management-section no-print">
+                <div class="toggle-header" onclick="toggleSection(this)">
+                    <h2>إدارة الأنصبة</h2>
+                    <span class="toggle-icon">-</span>
+                </div>
+                <div class="collapsible-content">
+                    <form id="quotaForm" class="form-grid">
+                        <input type="hidden" id="quotaId">
+                        <div><label for="className">اسم الفصل (اختر فصل أو أكثر)</label><select id="className" required multiple></select></div>
+                        <div><label for="subject">المادة</label><select id="subject" required></select></div>
+                        <div><label for="teacherName">المعلم الأساسي</label><select id="teacherName" required></select></div>
+                        <div id="coTeacherContainer" style="display: none;"><label for="coTeacherName">المعلم المشارك (اختياري)</label><select id="coTeacherName"></select></div>
+                        <div><label for="weeklyPeriods">الحصص الأسبوعية</label><input type="number" id="weeklyPeriods" min="1" required placeholder="مثال: 4"></div>
+                        <div style="align-self: end; grid-column: 1 / -1;">
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" id="addQuotaBtn" style="flex: 2;">إضافة نصاب</button>
+                                <button type="button" id="toggleCoTeacherBtn" style="flex: 2;">إضافة معلم مشارك</button>
+                                <button type="button" id="cancelEditBtn" class="cancel-btn" style="flex: 1; display: none;">إلغاء</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="quota-table-container">
+                        <table id="quotaTable">
+                            <thead><tr><th>الفصل</th><th>المادة</th><th>المعلمون</th><th>الحصص</th><th>إجراءات</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div id="teacher-stats" style="margin-top: 20px; padding: 10px; background-color: #fff; border-radius: 6px;"></div>
+                </div>
+            </div>
+            
+            <!-- قسم الحصص غير الموزعة -->
+            <div class="management-section no-print">
+                 <h2>حصص غير موزعة (اسحبها للجدول)</h2>
+                 <div id="unassigned-cards-container" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+
+            <!-- قسم عرض الجداول -->
+            <div class="management-section no-print">
+                <h2>عرض الجداول</h2>
+                <div id="view-controls" class="view-controls-flex">
+                     <div class="view-control-group">
+                        <button class="view-btn icon-btn" data-view="class-general" title="الجدول العام للفصول">
+                            <svg viewBox="0 0 24 24"><path d="M4,4H8V8H4V4M10,4H14V8H10V4M16,4H20V8H16V4M4,10H8V14H4V10M10,10H14V14H10V10M16,10H20V14H16V10M4,16H8V20H4V16M10,16H14V20H10V16M16,16H20V20H16V16Z" /></svg>
+                        </button>
+                        <select id="class-selector" title="اختر فصل لعرض جدوله منفرداً"></select>
+                    </div>
+                    <div class="view-control-group">
+                        <button class="view-btn icon-btn" data-view="teacher-general" title="الجدول العام للمعلمين">
+                            <svg viewBox="0 0 24 24"><path d="M16 17V19H2V17S2 13 9 13S16 17 16 17M12.5 7.5A3.5 3.5 0 1 0 9 11A3.5 3.5 0 0 0 12.5 7.5M15.94 13.62A5.32 5.32 0 0 1 18 17V19H22V17S22 13.38 15.94 13.62M15 4.5A3.5 3.5 0 1 0 11.5 8A3.5 3.5 0 0 0 15 4.5Z" /></svg>
+                        </button>
+                        <select id="teacher-selector" title="اختر معلماً لعرض جدوله منفرداً"></select>
+                    </div>
+                    <div class="view-control-group">
+                        <button class="view-btn icon-btn" data-view="daily" title="الجدول اليومي">
+                            <svg viewBox="0 0 24 24"><path d="M19 19H5V8H19M19 3H18V1H16V3H8V1H6V3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M16.53 11.06L15.47 10L10.59 14.88L8.47 12.76L7.41 13.82L10.59 17L16.53 11.06Z" /></svg>
+                        </button>
+                        <select id="day-selector"></select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; border-top: 1px solid var(--medium-gray); padding-top: 15px;">
+                    <div style="flex: 1; min-width: 150px;"><label for="firstColumnWidth">عرض العمود 1 (px)</label><input type="number" id="firstColumnWidth" min="50"></div>
+                    <div style="flex: 1; min-width: 150px;"><label for="dataColumnWidth">عرض الأعمدة (px)</label><input type="number" id="dataColumnWidth" min="50"></div>
+                    <div style="flex: 1; min-width: 150px;"><label for="dataRowHeight">ارتفاع الصفوف (px)</label><input type="number" id="dataRowHeight" min="50"></div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label for="fontSize">حجم الخط: <span id="fontSizeValue">14</span>px</label>
+                        <input type="range" id="fontSize" min="10" max="50" step="1">
+                    </div>
+                </div>
+                 <div class="table-display-options">
+                    <div class="option-group">
+                        <label>إعدادات العرض:</label>
+                        <button id="toggleBreakBtn">الفسحة</button>
+                        <button id="toggleTimeBtn">الوقت</button>
+                    </div>
+                    <div class="option-group">
+                        <label>نمط العرض:</label>
+                        <button data-style="cards" class="display-style-btn">بطاقات</button>
+                        <button data-style="text" class="display-style-btn">نص</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;" class="action-buttons-group">
+                <button id="distributeRandomlyBtn">توزيع عشوائي</button>
+                <button id="resetScheduleBtn">إعادة تعيين</button>
+                <button id="toggleColorsBtn">إخفاء/إظهار الألوان</button>
+            </div>
+
+            <!-- حاويات الجداول -->
+            <div id="class-general-view" class="view-container" style="display:block;">
+                <div class="schedule-print-header"></div>
+                <div style="overflow-x: auto;" class="main-schedule-container">
+                    <table id="scheduleTable"><thead></thead><tbody></tbody></table>
+                </div>
+            </div>
+            <div id="single-class-view" class="view-container">
+                <div class="schedule-print-header"></div>
+                <div style="overflow-x: auto;" class="main-schedule-container">
+                    <!-- Single class table will be injected here -->
+                </div>
+            </div>
+
+            <div id="teacher-general-view" class="view-container">
+                <div class="schedule-print-header"></div>
+                <div style="overflow-x: auto;" class="main-schedule-container">
+                    <table id="teacherScheduleTable"><thead></thead><tbody></tbody></table>
+                </div>
+            </div>
+            <div id="single-teacher-view" class="view-container">
+                <div class="schedule-print-header"></div>
+                <div style="overflow-x: auto;" class="main-schedule-container">
+                    <!-- Single teacher table will be injected here -->
+                </div>
+            </div>
+
+            <div id="daily-view" class="view-container">
+                <div class="schedule-print-header"></div>
+                <div style="overflow-x: auto;" class="main-schedule-container">
+                    <table id="dailyScheduleTable"><thead></thead><tbody></tbody></table>
+                </div>
+            </div>
+
+            <div class="export-buttons-group" style="margin-top: 20px;">
+                 <button id="printBtn">طباعة</button>
+                 <button id="exportAllTeachersBtn">تصدير جداول المعلمين</button>
+                 <button id="exportAllDaysBtn">تصدير الجدول اليومي الكامل</button> 
+                 <button id="pdfBtn">PDF</button>
+                 <button id="excelBtn">Excel</button>
+                 <button id="wordBtn">Word</button>
+                       <div style="display: flex; align-items: center; justify-content:center; gap: 5px; min-width: 120px;">
+                 <input type="checkbox" id="printBwCheckbox" style="width: auto; margin-top: 0;">
+                 <label for="printBwCheckbox" style="margin: 0;">بدون ألوان</label>
+                      </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="teacherEditModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close-btn">&times;</span>
+            <h3>تعديل بيانات المعلم</h3>
+            <div class="data-management-grid" style="grid-template-columns: 1fr 2fr;">
+                <div>
+                    <form id="editTeacherForm">
+                        <input type="hidden" id="editingTeacherName">
+                        <label for="editTeacherName">اسم المعلم</label>
+                        <input type="text" id="editTeacherName" required>
+                        <label>المواد التي يدرسها</label>
+                        <div id="editTeacherSubjectsCheckboxes" style="max-height: 300px; overflow-y: auto;"></div>
+                    </form>
+                </div>
+                <div>
+                    <h4>تحديد أوقات التواجد</h4>
+                    <p>اضغط على اسم اليوم لتحديد اليوم كاملاً، أو على الحصة لتحديدها بشكل فردي.</p>
+                    <div style="overflow-x: auto;">
+                       <table id="teacherAvailabilityGrid"></table>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="saveTeacherChangesBtn">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="copyQuotaModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <span class="modal-close-btn">&times;</span>
+            <h3>نسخ النصاب إلى فصل آخر</h3>
+            <input type="hidden" id="quotaToCopyId">
+            <label for="copyQuotaTargetClass">اختر الفصل المستهدف</label>
+            <select id="copyQuotaTargetClass"></select>
+            <button id="confirmCopyQuotaBtn" style="margin-top: 15px;">تأكيد النسخ</button>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <span class="modal-close-btn">&times;</span>
+            <h3>الوصول الكامل للبرنامج</h3>
+            <p>لعرض بقية أيام الأسبوع وبقية الفصول وبقية المعلمين والحصول على جميع الميزات، يرجى الاشتراك في النسخة الكاملة.</p>
+            <h4>للدفع والإشتراك تواصل معنا:</h4>
+            <div style="margin: 15px 0;">
+                <strong>Instapay</strong>
+                <p> امسح الكود التالي للدفع ولا تنسى إرسال الإيصال عبر الواتساب </p>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://ipn.eg/S/mahmoud79070/instapay/6qDwHf" alt="Instapay QR Code">
+                <p><a href="https://ipn.eg/S/mahmoud79070/instapay/6qDwHf" target="_blank">أو اضغط هنا للدفع</a></p>
+            </div>
+            <div style="margin: 15px 0;">
+                <a id="whatsapp-link" href="https://wa.me/201552402912?text=%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D8%A7%D9%84%D9%86%D8%B3%D8%AE%D8%A9%20%D8%A7%D9%84%D9%83%D8%A7%D9%85%D9%84%D8%A9%20%D9%84%D8%A8%D8%B1%D9%86%D8%A7%D9%85%D8%AC%20%D9%85%D9%86%D8%B8%D9%85%20%D8%AC%D8%AF%D9%88%D9%84%20%D8%A7%D9%84%D8%AD%D8%B5%D8%B5." target="_blank" style="text-decoration: none; color: #25D366; font-size: 1.2em; display: inline-flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91c0-5.46-4.45-9.91-9.91-9.91M17.5 14.3c-.27-.14-1.59-.78-1.84-.88c-.25-.09-.43-.14-.61.14c-.18.28-.69.88-.85 1.06c-.15.18-.3.2-.56.07c-.26-.14-1.11-.41-2.11-1.3c-.78-.69-1.3-1.54-1.46-1.8c-.16-.28-.01-.43.12-.56c.12-.12.27-.3.4-.46c.14-.15.18-.25.27-.42c.09-.17.05-.31-.02-.45c-.07-.14-.61-1.47-.84-2.01c-.23-.54-.46-.47-.61-.47c-.15 0-.33-.02-.51-.02c-.18 0-.48.07-.73.35c-.25.28-.97.94-.97 2.3c0 1.36 1 2.66 1.14 2.84c.14.18 1.97 3.01 4.79 4.22c.69.29 1.23.47 1.65.6c.71.22 1.36.19 1.88.11c.57-.08 1.59-.65 1.81-1.29c.23-.64.23-1.18.16-1.3c-.07-.12-.25-.2-.51-.34"/></svg>
+                    <span>تواصل معنا عبر واتساب</span>
+                </a>
+            </div>
+        </div>
+    </div>
 
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+        // --- ضع معلومات تهيئة Firebase هنا ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJO-P9t196m4lzBPp7EHjQLUhWikIMH3U",
+            authDomain: "turing-diode-468718-b3.firebaseapp.com",
+            databaseURL: "https://turing-diode-468718-b3-default-rtdb.firebaseio.com",
+            projectId: "turing-diode-468718-b3",
+            storageBucket: "turing-diode-468718-b3.appspot.com",
+            messagingSenderId: "492366336701",
+            appId: "1:492366336701:web:e56c66aaff89c2af709dd4",
+            measurementId: "G-FPRZJRNG29"
+        };
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+        // --- تهيئة Firebase ---
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        let currentUser = null;
+        let userRole = 'user'; 
+
+        // --- البيانات ---
+        let allClasses = [];
+        let allSubjects = [];
+        let allTeachers = [];
+        let quotas = [];
+        let cards = [];
+        let placements = {};
+        let scheduleSettings = {};
+        let draggedCardId = null;
+        const allPossibleDays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+        
+        // --- All Functions ---
+        const saveClasses = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('classes').set({ list: allClasses }); };
+        const saveSubjects = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('subjects').set({ list: allSubjects }); };
+        const saveTeachers = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('teachers').set({ list: allTeachers }); };
+        const saveQuotas = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('quotas').set({ list: quotas }); };
+        const savePlacements = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('placements').set(placements); };
+        const saveSettings = async () => { if(currentUser) await db.collection('users').doc(currentUser.uid).collection('data').doc('settings').set(scheduleSettings); };
+
+        function toggleAuthView(showLogin) {
+            document.getElementById('login-view').style.display = showLogin ? 'block' : 'none';
+            document.getElementById('signup-view').style.display = showLogin ? 'none' : 'block';
+            document.getElementById('auth-error').textContent = '';
         }
-      });
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                document.getElementById('auth-error').textContent = "فشل تسجيل الدخول: " + error.message;
+            }
+        }
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                await db.collection('users').doc(user.uid).set({ email: user.email, role: 'user' });
+                await initializeDefaultUserData(user.uid);
+                // After successful signup, it will trigger onAuthStateChanged to log the user in.
+            } catch (error) {
+                document.getElementById('auth-error').textContent = "فشل إنشاء الحساب: " + error.message;
+            }
+        }
+
+        async function initializeDefaultUserData(uid) {
+            const defaultData = {
+                classes: { list: ["1/1", "1/2", "2/1"] },
+                subjects: { list: [{ name: "لغة عربية", periods: 5 }, { name: "رياضيات", periods: 4 }] },
+                teachers: { list: [{ name: "أ. محمد", subjects: ["لغة عربية"], availability: {} }] },
+                quotas: { list: [] },
+                placements: {},
+                settings: {
+                    schoolName: 'مدرستي', academicYear: '2025-2026', schedulerName: 'مسئول الجدول',
+                    daysCount: 5, periodsCount: 7, startDay: 'الأحد', breakAfterPeriod: 4,
+                    periodDuration: 45, startTime: '08:00', showBreak: true, showTime: true,
+                    fontSize: 14, displayStyle: 'cards',
+                    firstColumnWidth: 100, dataColumnWidth: 85, dataRowHeight: 85
+                }
+            };
+            const batch = db.batch();
+            for (const key in defaultData) {
+                const docRef = db.collection('users').doc(uid).collection('data').doc(key);
+                batch.set(docRef, defaultData[key]);
+            }
+            await batch.commit();
+        }
+
+     async function loadUserData() {
+    if (!currentUser) return;
+    
+    // جلب كل البيانات دفعة واحدة
+    const dataCollections = ['classes', 'subjects', 'teachers', 'quotas', 'placements', 'settings'];
+    const promises = dataCollections.map(col => db.collection('users').doc(currentUser.uid).collection('data').doc(col).get());
+    const [classesDoc, subjectsDoc, teachersDoc, quotasDoc, placementsDoc, settingsDoc] = await Promise.all(promises);
+
+    // التحقق من سلامة البيانات قبل إسنادها (هذا هو الإصلاح الرئيسي)
+    // نتأكد أن الخاصية list موجودة وأنها مصفوفة بالفعل
+    allClasses = (classesDoc.exists && Array.isArray(classesDoc.data().list)) ? classesDoc.data().list : [];
+    allSubjects = (subjectsDoc.exists && Array.isArray(subjectsDoc.data().list)) ? subjectsDoc.data().list : [];
+    allTeachers = (teachersDoc.exists && Array.isArray(teachersDoc.data().list)) ? teachersDoc.data().list : [];
+    quotas = (quotasDoc.exists && Array.isArray(quotasDoc.data().list)) ? quotasDoc.data().list : [];
+    
+    // نتأكد أن البيانات هي كائن (object)
+    placements = (placementsDoc.exists && typeof placementsDoc.data() === 'object') ? placementsDoc.data() : {};
+    scheduleSettings = (settingsDoc.exists && typeof settingsDoc.data() === 'object') ? settingsDoc.data() : {
+        schoolName: 'مدرستي الابتدائية', academicYear: '2025-2026', schedulerName: 'مسئول الجدول',
+        daysCount: 5, periodsCount: 7, startDay: 'الأحد', breakAfterPeriod: 4,
+        periodDuration: 45, startTime: '08:00', showBreak: true, showTime: true,
+        fontSize: 14, displayStyle: 'cards',
+        firstColumnWidth: 100, dataColumnWidth: 85, dataRowHeight: 85
+    };
+}
+
+        function renderAllListsAndTables() {
+    // 1. نرسم كل شيء كالعادة...
+    generateCards();
+    renderClassesList();
+    renderSubjectsList();
+    renderTeachersList();
+    renderQuotaTable();
+    renderGeneralClassView();
+    renderGeneralTeacherView();
+    renderDailyView(document.getElementById('day-selector')?.value || (scheduleSettings.days ? scheduleSettings.days[0] : ''));
+    renderUnassignedCards();
+    updatePrintHeaders();
+
+    // ▼▼▼ هذا هو السطر الذي يجب إضافته ▼▼▼
+    populateSelectors(); // لملء قوائم عرض الجداول (الفصل، المعلم، اليوم)
+
+    // 2. ... ثم نؤجل ملء القوائم المنسدلة إلى آخر لحظة ممكنة
+    setTimeout(function() {
+        console.log("Now, for real, populating the dropdowns!");
+        populateDropdowns(); // هذه الدالة خاصة بقوائم قسم "إدارة الأنصبة" وستبقى تعمل كما هي
+    }, 0); 
+}
+
+        function initializeSettingsForm() {
+            document.getElementById('schoolName').value = scheduleSettings.schoolName;
+            document.getElementById('academicYear').value = scheduleSettings.academicYear;
+            document.getElementById('schedulerName').value = scheduleSettings.schedulerName;
+            document.getElementById('daysCount').value = scheduleSettings.daysCount;
+            document.getElementById('periodsCount').value = scheduleSettings.periodsCount;
+            document.getElementById('breakAfterPeriod').value = scheduleSettings.breakAfterPeriod;
+            document.getElementById('periodDuration').value = scheduleSettings.periodDuration;
+            document.getElementById('startTime').value = scheduleSettings.startTime;
+            
+            document.getElementById('fontSize').value = scheduleSettings.fontSize || 14;
+            document.getElementById('fontSizeValue').textContent = scheduleSettings.fontSize || 14;
+            document.getElementById('firstColumnWidth').value = scheduleSettings.firstColumnWidth || 100;
+            document.getElementById('dataColumnWidth').value = scheduleSettings.dataColumnWidth || 85;
+            document.getElementById('dataRowHeight').value = scheduleSettings.dataRowHeight || 85;
+            
+            const startDaySelect = document.getElementById('startDay');
+            startDaySelect.innerHTML = '';
+            allPossibleDays.forEach(day => {
+                startDaySelect.innerHTML += `<option value="${day}">${day}</option>`;
+            });
+            startDaySelect.value = scheduleSettings.startDay;
+        }
+
+        async function updateSettings(fullReload = true) {
+            scheduleSettings.schoolName = document.getElementById('schoolName').value;
+            scheduleSettings.academicYear = document.getElementById('academicYear').value;
+            scheduleSettings.schedulerName = document.getElementById('schedulerName').value;
+            scheduleSettings.daysCount = parseInt(document.getElementById('daysCount').value, 10);
+            scheduleSettings.periodsCount = parseInt(document.getElementById('periodsCount').value, 10);
+            scheduleSettings.startDay = document.getElementById('startDay').value;
+            scheduleSettings.breakAfterPeriod = parseInt(document.getElementById('breakAfterPeriod').value, 10);
+            scheduleSettings.periodDuration = parseInt(document.getElementById('periodDuration').value, 10);
+            scheduleSettings.startTime = document.getElementById('startTime').value;
+            // These are now handled by buttons, not read from here
+            // scheduleSettings.showBreak = document.getElementById('showBreak').checked;
+            // scheduleSettings.showTime = document.getElementById('showTime').checked;
+            // scheduleSettings.displayStyle = document.getElementById('displayStyle').value;
+            scheduleSettings.fontSize = parseInt(document.getElementById('fontSize').value, 10);
+            scheduleSettings.firstColumnWidth = parseInt(document.getElementById('firstColumnWidth').value, 10);
+            scheduleSettings.dataColumnWidth = parseInt(document.getElementById('dataColumnWidth').value, 10);
+            scheduleSettings.dataRowHeight = parseInt(document.getElementById('dataRowHeight').value, 10);
+            
+            const dayIndex = allPossibleDays.indexOf(scheduleSettings.startDay);
+            scheduleSettings.days = allPossibleDays.slice(dayIndex, dayIndex + scheduleSettings.daysCount);
+
+            await saveSettings();
+            applyVisualSettings();
+            if (fullReload) {
+                renderAllListsAndTables();
+            } else {
+                updatePrintHeaders();
+            }
+        }
+        
+        function applyVisualSettings() {
+            const root = document.documentElement;
+            root.style.setProperty('--base-font-size', (scheduleSettings.fontSize || 14) + 'px');
+            root.style.setProperty('--first-column-width', (scheduleSettings.firstColumnWidth || 100) + 'px');
+            root.style.setProperty('--data-column-width', (scheduleSettings.dataColumnWidth || 85) + 'px');
+            root.style.setProperty('--data-row-height', (scheduleSettings.dataRowHeight || 85) + 'px');
+            
+            // Update button states
+            document.querySelector('#toggleBreakBtn').classList.toggle('active-view-btn', scheduleSettings.showBreak);
+            document.querySelector('#toggleTimeBtn').classList.toggle('active-view-btn', scheduleSettings.showTime);
+            document.querySelectorAll('.display-style-btn').forEach(btn => {
+                btn.classList.toggle('active-view-btn', btn.dataset.style === scheduleSettings.displayStyle);
+            });
+            document.body.classList.toggle('text-mode', scheduleSettings.displayStyle === 'text');
+        }
+
+        function updatePrintHeaders() {
+            const headerHTML = `
+                <h3>${scheduleSettings.schoolName}</h3>
+                <p><strong>العام الدراسي:</strong> ${scheduleSettings.academicYear} | <strong>مسئول الجدول:</strong> ${scheduleSettings.schedulerName}</p>
+            `;
+            document.querySelectorAll('.schedule-print-header').forEach(header => {
+                header.innerHTML = headerHTML;
+            });
+        }
+        function resetClassForm() {
+            document.getElementById('addClassForm').reset();
+            document.getElementById('editingClassName').value = '';
+            document.getElementById('addClassBtn').textContent = 'إضافة فصل';
+            document.getElementById('cancelClassEditBtn').style.display = 'none';
+        }
+
+        function editClass(className) {
+            document.getElementById('editingClassName').value = className;
+            document.getElementById('newClassName').value = className;
+            document.getElementById('addClassBtn').textContent = 'تحديث فصل';
+            document.getElementById('cancelClassEditBtn').style.display = 'block';
+            document.getElementById('newClassName').focus();
+        }
+
+        async function addOrUpdateClass(e) {
+            e.preventDefault();
+            const newClassName = document.getElementById('newClassName').value.trim();
+            const oldClassName = document.getElementById('editingClassName').value;
+
+            if (!newClassName) { alert('اسم الفصل مطلوب.'); return; }
+            
+            if (oldClassName) { // Update
+                if (allClasses.some(c => c === newClassName && c !== oldClassName)) {
+                    alert('اسم الفصل موجود بالفعل.'); return;
+                }
+                const classIndex = allClasses.findIndex(c => c === oldClassName);
+                if (classIndex !== -1) {
+                    allClasses[classIndex] = newClassName;
+                    quotas.forEach(q => {
+                        q.classNames = q.classNames.map(name => name === oldClassName ? newClassName : name);
+                    });
+                    await saveQuotas();
+                }
+            } else { // Add
+                if (allClasses.includes(newClassName)) { alert('اسم الفصل موجود بالفعل.'); return; }
+                allClasses.push(newClassName);
+            }
+            allClasses.sort();
+            await saveClasses();
+            resetClassForm();
+            renderAllListsAndTables();
+        }
+
+        async function deleteClass(className) {
+            if (confirm(`هل أنت متأكد من حذف فصل "${className}"؟ سيتم حذفه من أي أنصبة مرتبط بها.`)) {
+                allClasses = allClasses.filter(c => c !== className);
+                quotas.forEach(q => {
+                    q.classNames = q.classNames.filter(name => name !== className);
+                });
+                quotas = quotas.filter(q => q.classNames.length > 0);
+                await saveClasses();
+                await saveQuotas();
+                renderAllListsAndTables();
+            }
+        }
+        
+        function renderClassesList() {
+            const list = document.getElementById('classesList');
+            list.innerHTML = '';
+            allClasses.forEach(c => {
+                const li = document.createElement('li');
+                li.style.display = 'flex'; li.style.justifyContent = 'space-between'; li.style.alignItems = 'center';
+                li.innerHTML = `<span>${c}</span>
+                                <div>
+                                    <button class="edit-btn" onclick="editClass('${c}')">تعديل</button>
+                                    <button class="delete-btn" onclick="deleteClass('${c}')">حذف</button>
+                                </div>`;
+                list.appendChild(li);
+            });
+        }
+        
+        function resetSubjectForm() {
+            document.getElementById('addSubjectForm').reset();
+            document.getElementById('editingSubjectName').value = '';
+            document.getElementById('addSubjectBtn').textContent = 'إضافة مادة';
+            document.getElementById('cancelSubjectEditBtn').style.display = 'none';
+        }
+
+        function editSubject(subjectName) {
+            const subject = allSubjects.find(s => s.name === subjectName);
+            if (!subject) return;
+            document.getElementById('editingSubjectName').value = subject.name;
+            document.getElementById('newSubjectName').value = subject.name;
+            document.getElementById('newSubjectPeriods').value = subject.periods;
+            document.getElementById('addSubjectBtn').textContent = 'تحديث مادة';
+            document.getElementById('cancelSubjectEditBtn').style.display = 'block';
+            document.getElementById('newSubjectName').focus();
+        }
+
+        async function addOrUpdateSubject(e) {
+            e.preventDefault();
+            const newSubjectName = document.getElementById('newSubjectName').value.trim();
+            const newSubjectPeriods = parseInt(document.getElementById('newSubjectPeriods').value, 10);
+            const oldSubjectName = document.getElementById('editingSubjectName').value;
+
+            if (!newSubjectName || isNaN(newSubjectPeriods) || newSubjectPeriods < 1) { alert('البيانات غير صحيحة.'); return; }
+
+            if (oldSubjectName) { // Update
+                const subjectIndex = allSubjects.findIndex(s => s.name === oldSubjectName);
+                if (subjectIndex !== -1) {
+                    if (allSubjects.some(s => s.name === newSubjectName && s.name !== oldSubjectName)) { alert('اسم المادة موجود بالفعل.'); return; }
+                    allSubjects[subjectIndex] = { name: newSubjectName, periods: newSubjectPeriods };
+                    if (oldSubjectName !== newSubjectName) {
+                        allTeachers.forEach(t => {
+                            const subIndex = t.subjects.indexOf(oldSubjectName);
+                            if (subIndex > -1) t.subjects[subIndex] = newSubjectName;
+                        });
+                        quotas.forEach(q => { if (q.subject === oldSubjectName) q.subject = newSubjectName; });
+                        await saveTeachers(); await saveQuotas();
+                    }
+                    await saveSubjects();
+                }
+            } else { // Add
+                if (allSubjects.some(s => s.name === newSubjectName)) { alert('المادة موجودة بالفعل.'); return; }
+                allSubjects.push({ name: newSubjectName, periods: newSubjectPeriods });
+                await saveSubjects();
+            }
+            resetSubjectForm();
+            renderAllListsAndTables();
+        }
+
+        async function deleteSubject(subjectName) { 
+            if(confirm(`هل أنت متأكد من حذف مادة "${subjectName}"؟ سيتم حذفها من المعلمين والأنصبة.`)) { 
+                allSubjects = allSubjects.filter(s => s.name !== subjectName);
+                allTeachers.forEach(t => { t.subjects = t.subjects.filter(s => s !== subjectName); });
+                const quotasToDelete = quotas.filter(q => q.subject === subjectName);
+                quotasToDelete.forEach(q => { cards.filter(c => c.quotaId === q.id).forEach(c => delete placements[c.id]); });
+                quotas = quotas.filter(q => q.subject !== subjectName);
+                await saveSubjects(); await saveTeachers(); await saveQuotas(); await savePlacements();
+                renderAllListsAndTables();
+            }
+        }
+        
+        function renderSubjectsList() { 
+            const list = document.getElementById('subjectsList'); 
+            list.innerHTML = ''; 
+            allSubjects.forEach(s => { 
+                const li = document.createElement('li');
+                li.style.display = 'flex'; li.style.justifyContent = 'space-between'; li.style.alignItems = 'center';
+                li.innerHTML = `<span>${s.name} (${s.periods} حصص)</span>
+                                <div>
+                                    <button class="edit-btn" onclick="editSubject('${s.name}')">تعديل</button>
+                                    <button class="delete-btn" onclick="deleteSubject('${s.name}')">حذف</button>
+                                </div>`;
+                list.appendChild(li); 
+            });
+        }
+        
+        function openTeacherModal(teacherName) {
+            const modal = document.getElementById('teacherEditModal');
+            const teacher = allTeachers.find(t => t.name === teacherName);
+            if (!teacher) return;
+
+            document.getElementById('editingTeacherName').value = teacher.name;
+            document.getElementById('editTeacherName').value = teacher.name;
+            
+            const subjectsContainer = document.getElementById('editTeacherSubjectsCheckboxes');
+            subjectsContainer.innerHTML = '';
+            allSubjects.forEach(s => {
+                const isChecked = teacher.subjects.includes(s.name);
+                subjectsContainer.innerHTML += `<label><input type="checkbox" value="${s.name}" ${isChecked ? 'checked' : ''}> ${s.name}</label>`;
+            });
+
+            renderTeacherAvailabilityGrid(teacher.availability || {});
+            modal.style.display = 'block';
+        }
+
+        function closeTeacherModal() {
+            document.getElementById('teacherEditModal').style.display = 'none';
+        }
+
+        function renderTeacherAvailabilityGrid(availability) {
+            const grid = document.getElementById('teacherAvailabilityGrid');
+            grid.innerHTML = '';
+            const head = grid.createTHead();
+            const headerRow = head.insertRow();
+            headerRow.insertCell();
+            for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+                headerRow.insertCell().textContent = i;
+            }
+            
+            const body = grid.createTBody();
+            scheduleSettings.days.forEach(day => {
+                const row = body.insertRow();
+                const dayCell = row.insertCell();
+                dayCell.textContent = day;
+                dayCell.style.cursor = 'pointer';
+                dayCell.onclick = () => toggleFullDay(day);
+
+                for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
+                    const cell = row.insertCell();
+                    cell.dataset.day = day;
+                    cell.dataset.period = period;
+                    const status = availability[`${day}-${period}`] || 'available';
+                    cell.textContent = status === 'available' ? '✓' : '✗';
+                    cell.className = status;
+                    cell.onclick = () => toggleAvailability(cell);
+                }
+            });
+        }
+
+        function toggleFullDay(day) {
+            const cells = document.querySelectorAll(`#teacherAvailabilityGrid td[data-day="${day}"]`);
+            const isCurrentlyAvailable = cells[0].classList.contains('available');
+            const newStatus = isCurrentlyAvailable ? 'unavailable' : 'available';
+            cells.forEach(cell => {
+                cell.className = newStatus;
+                cell.textContent = newStatus === 'available' ? '✓' : '✗';
+            });
+        }
+        
+        function toggleAvailability(cell) {
+            const currentStatus = cell.className;
+            const newStatus = currentStatus === 'available' ? 'unavailable' : 'available';
+            cell.textContent = newStatus === 'available' ? '✓' : '✗';
+            cell.className = newStatus;
+        }
+
+        async function saveTeacherChanges() {
+            const oldName = document.getElementById('editingTeacherName').value;
+            const teacherIndex = allTeachers.findIndex(t => t.name === oldName);
+            if (teacherIndex === -1) return;
+
+            const newName = document.getElementById('editTeacherName').value.trim();
+            if (!newName) { alert('الاسم مطلوب.'); return; }
+            if (allTeachers.some(t => t.name === newName && t.name !== oldName)) { alert('الاسم موجود بالفعل.'); return; }
+            
+            const newSubjects = Array.from(document.querySelectorAll('#editTeacherSubjectsCheckboxes input:checked')).map(cb => cb.value);
+            const newAvailability = {};
+            document.querySelectorAll('#teacherAvailabilityGrid tbody td[data-day]').forEach(cell => {
+                newAvailability[`${cell.dataset.day}-${cell.dataset.period}`] = cell.className;
+            });
+
+            allTeachers[teacherIndex] = { name: newName, subjects: newSubjects, availability: newAvailability };
+            
+            if (oldName !== newName) {
+                quotas.forEach(q => { q.teacherNames = q.teacherNames.map(name => name === oldName ? newName : name); });
+                await saveQuotas();
+            }
+            await saveTeachers();
+            closeTeacherModal();
+            renderAllListsAndTables();
+        }
+
+        async function addTeacher(e) {
+            e.preventDefault();
+            const newName = document.getElementById('newTeacherName').value.trim();
+            if (newName && !allTeachers.some(t => t.name === newName)) {
+                allTeachers.push({ name: newName, subjects: [], availability: {} });
+                await saveTeachers();
+                renderTeachersList();
+                document.getElementById('newTeacherName').value = '';
+            } else {
+                alert('المعلم موجود بالفعل أو الاسم غير صحيح.');
+            }
+        }
+
+        async function deleteTeacher(name) { 
+            if(confirm(`هل أنت متأكد من حذف المعلم "${name}"؟ سيتم حذفه من الأنصبة.`)) { 
+                allTeachers = allTeachers.filter(t => t.name !== name); 
+                quotas = quotas.filter(q => !q.teacherNames.includes(name)); 
+                await saveTeachers(); 
+                await saveQuotas(); 
+                renderAllListsAndTables(); 
+            }
+        }
+        
+        function renderTeachersList() {
+            const list = document.getElementById('teachersList');
+            list.innerHTML = '';
+            allTeachers.forEach(t => {
+                const li = document.createElement('li');
+                li.style.display = 'flex'; li.style.justifyContent = 'space-between'; li.style.alignItems = 'center';
+                li.innerHTML = `
+                    <span style="flex-grow: 1;"><strong>${t.name}</strong></span>
+                    <div>
+                        <button class="edit-btn" onclick="openTeacherModal('${t.name}')">تعديل</button>
+                        <button class="delete-btn" onclick="deleteTeacher('${t.name}')">حذف</button>
+                    </div>`;
+                list.appendChild(li);
+            });
+        }
+
+        function toggleCoTeacher() { const container = document.getElementById('coTeacherContainer'); container.style.display = container.style.display === 'none' ? 'block' : 'none'; }
+        
+        function resetQuotaForm() {
+            document.getElementById('quotaForm').reset();
+            document.getElementById('quotaId').value = '';
+            document.getElementById('addQuotaBtn').textContent = 'إضافة نصاب';
+            document.getElementById('coTeacherContainer').style.display = 'none';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+            filterTeachersBySubject();
+        }
+
+        async function addOrUpdateQuota() {
+            const quotaId = document.getElementById('quotaId').value;
+            const classNames = Array.from(document.getElementById('className').selectedOptions).map(opt => opt.value);
+            const subject = document.getElementById('subject').value;
+            const teacher1 = document.getElementById('teacherName').value;
+            const teacher2 = document.getElementById('coTeacherContainer').style.display !== 'none' ? document.getElementById('coTeacherName').value : null;
+            const weeklyPeriods = parseInt(document.getElementById('weeklyPeriods').value, 10);
+            if (classNames.length === 0 || !subject || !teacher1 || isNaN(weeklyPeriods) || weeklyPeriods < 1) { alert("يرجى ملء الحقول الأساسية."); return; }
+            let teacherNames = [teacher1];
+            if (teacher2 && teacher1 !== teacher2) teacherNames.push(teacher2);
+            if (quotaId) {
+                const index = quotas.findIndex(q => q.id == quotaId);
+                if (index !== -1) quotas[index] = { ...quotas[index], classNames, subject, teacherNames, weeklyPeriods };
+            } else {
+                quotas.push({ id: Date.now(), classNames, subject, teacherNames, weeklyPeriods });
+            }
+            await saveQuotas();
+            resetQuotaForm();
+            renderAllListsAndTables();
+        }
+
+        function editQuota(id) {
+            const quota = quotas.find(q => q.id === id); if (!quota) return;
+            document.getElementById('quotaId').value = quota.id;
+            
+            const classSelect = document.getElementById('className');
+            Array.from(classSelect.options).forEach(opt => {
+                opt.selected = quota.classNames.includes(opt.value);
+            });
+
+            document.getElementById('subject').value = quota.subject;
+            filterTeachersBySubject();
+            document.getElementById('teacherName').value = quota.teacherNames[0];
+            if (quota.teacherNames.length > 1) {
+                const container = document.getElementById('coTeacherContainer'); container.style.display = 'block'; populateCoTeachers(); document.getElementById('coTeacherName').value = quota.teacherNames[1];
+            } else { document.getElementById('coTeacherContainer').style.display = 'none'; }
+            document.getElementById('weeklyPeriods').value = quota.weeklyPeriods;
+            document.getElementById('addQuotaBtn').textContent = 'تحديث النصاب';
+            document.getElementById('cancelEditBtn').style.display = 'block';
+        }
+
+        async function deleteQuota(id) {
+            if (confirm('هل أنت متأكد؟ سيتم حذف النصاب وكل حصصه الموزعة.')) {
+                cards.filter(c => c.quotaId === id).forEach(card => { if (placements[card.id]) delete placements[card.id]; });
+                await savePlacements();
+                quotas = quotas.filter(q => q.id !== id);
+                await saveQuotas();
+                renderAllListsAndTables();
+            }
+        }
+        
+        function openCopyQuotaModal(quotaId) {
+            document.getElementById('quotaToCopyId').value = quotaId;
+            const targetClassSelect = document.getElementById('copyQuotaTargetClass');
+            targetClassSelect.innerHTML = '';
+            allClasses.forEach(c => {
+                targetClassSelect.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+            document.getElementById('copyQuotaModal').style.display = 'block';
+        }
+        function closeCopyQuotaModal() {
+            document.getElementById('copyQuotaModal').style.display = 'none';
+        }
+        async function confirmCopyQuota() {
+            const quotaId = document.getElementById('quotaToCopyId').value;
+            const targetClass = document.getElementById('copyQuotaTargetClass').value;
+            const originalQuota = quotas.find(q => q.id == quotaId);
+            if (!originalQuota || !targetClass) {
+                alert("خطأ: لم يتم العثور على النصاب أو الفصل المستهدف.");
+                return;
+            }
+            quotas.push({
+                id: Date.now(),
+                classNames: [targetClass],
+                subject: originalQuota.subject,
+                teacherNames: originalQuota.teacherNames,
+                weeklyPeriods: originalQuota.weeklyPeriods
+            });
+            await saveQuotas();
+            renderAllListsAndTables();
+            closeCopyQuotaModal();
+        }
+
+
+        function renderQuotaTable() {
+            const quotaBody = document.querySelector("#quotaTable tbody"); quotaBody.innerHTML = "";
+            quotas.forEach(q => {
+                const row = quotaBody.insertRow();
+                row.innerHTML = `<td>${q.classNames.join(', ')}</td><td>${q.subject}</td><td>${q.teacherNames.join(' و ')}</td><td>${q.weeklyPeriods}</td>
+                    <td style="padding: 2px;">
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; gap: 5px;">
+                            <button class="copy-btn" onclick="openCopyQuotaModal(${q.id})">نسخ</button>
+                            <button class="edit-btn" onclick="editQuota(${q.id})">تعديل</button>
+                            <button class="delete-btn" onclick="deleteQuota(${q.id})">حذف</button>
+                        </div>
+                    </td>`;
+            });
+        }
+
+       function populateDropdowns() {
+    const classSelect = document.getElementById('className');
+    if (classSelect) {
+        // 1. مسح الخيارات القديمة
+        classSelect.innerHTML = ''; 
+        
+        // 2. إضافة الخيارات الجديدة واحدًا تلو الآخر
+        allClasses.forEach(className => {
+            const option = document.createElement('option'); // إنشاء عنصر <option>
+            option.value = className; // تحديد القيمة
+            option.textContent = className; // تحديد النص الظاهر
+            classSelect.appendChild(option); // إضافة العنصر للقائمة
+        });
+    }
+
+    const subjectSelect = document.getElementById('subject');
+    if (subjectSelect) {
+        subjectSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
+        allSubjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject.name;
+            option.textContent = subject.name;
+            subjectSelect.appendChild(option);
+        });
+    }
+    
+    // هذه الوظيفة تبقى كما هي
+    filterTeachersBySubject();
+}
+
+        function filterTeachersBySubject() {
+            const subjectName = document.getElementById('subject').value; 
+            const teacherSelect = document.getElementById('teacherName'); 
+            const currentVal = teacherSelect.value;
+            teacherSelect.innerHTML = '<option value="" disabled selected>اختر المعلم</option>';
+            const relevantTeachers = allTeachers.filter(t => t.subjects.includes(subjectName));
+            relevantTeachers.forEach(t => teacherSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`); 
+            teacherSelect.value = currentVal;
+            const subjectData = allSubjects.find(s => s.name === subjectName);
+            if (subjectData) document.getElementById('weeklyPeriods').value = subjectData.periods;
+            populateCoTeachers();
+        }
+        
+        function populateCoTeachers() {
+            const coTeacherSelect = document.getElementById('coTeacherName'); 
+            const currentVal = coTeacherSelect.value;
+            coTeacherSelect.innerHTML = '<option value="">-- لا يوجد --</option>';
+            allTeachers.forEach(t => coTeacherSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`);
+            coTeacherSelect.value = currentVal;
+        }
+
+        const colorPalette = ['#1abc9c', '#3498db', '#9b59b6', '#34495e', '#f1c40f', '#e67e22', '#e74c3c', '#2ecc71', '#95a5a6', '#16a085'];
+        const subjectColorMap = new Map(); let nextColorIndex = 0;
+        function getSubjectColor(subject) { if (!subjectColorMap.has(subject)) { subjectColorMap.set(subject, colorPalette[nextColorIndex % colorPalette.length]); nextColorIndex++; } return subjectColorMap.get(subject); }
+
+        function generateCards() {
+            cards = [];
+            quotas.forEach(quota => {
+                for (let i = 0; i < quota.weeklyPeriods; i++) {
+                       cards.push({
+                            id: `card-${quota.id}-${quota.classNames.join('-')}-${i}`, quotaId: quota.id, classNames: quota.classNames,
+                            content: `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small><br><b>(${quota.classNames.join(', ')})</b>`,
+                            color: getSubjectColor(quota.subject)
+                        });
+                }
+            });
+        }
+        
+        function createCardElement(card, isUnassigned = false) { 
+            const div = document.createElement('div'); div.id = card.id; 
+            div.className = isUnassigned ? 'card unassigned-card' : 'card';
+            div.innerHTML = card.content; div.style.backgroundColor = card.color; 
+            div.draggable = true; div.ondragstart = drag; 
+            return div; 
+        }
+        
+        function reapplyPlacements() {
+            document.querySelectorAll('.main-schedule-container td .card, .main-schedule-container td .text-display').forEach(el => el.remove());
+            Object.entries(placements).forEach(([cardId, placement]) => {
+                const cardData = cards.find(c => c.id === cardId);
+                if (cardData && placement.day && placement.period) {
+                    cardData.classNames.forEach(className => {
+                        const cell = document.querySelector(`#scheduleTable td[data-class="${className}"][data-day="${placement.day}"][data-period="${placement.period}"]`);
+                        if (cell && cell.childElementCount === 0) {
+                            cell.appendChild(createCardElement(cardData));
+                            const textElement = document.createElement('div');
+                            textElement.className = 'text-display';
+                            textElement.innerHTML = cardData.content;
+                            textElement.style.backgroundColor = cardData.color;
+                            cell.appendChild(textElement);
+                        }
+                    });
+                }
+            });
+            reapplyPlacementsToTeacherView();
+        }
+
+        function renderUnassignedCards() {
+            const container = document.getElementById('unassigned-cards-container');
+            container.innerHTML = '';
+            const unassignedCards = cards.filter(c => !placements[c.id]);
+            unassignedCards.forEach(card => container.appendChild(createCardElement(card, true)));
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.view-container').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('#view-controls .icon-btn').forEach(b => b.classList.remove('active-view-btn'));
+            
+            const btn = document.querySelector(`.icon-btn[data-view='${view}']`);
+            if(btn) btn.classList.add('active-view-btn');
+
+            if (view === 'class-general') {
+                document.getElementById('class-selector').value = "";
+                filterSingleView('class', '');
+            } else if (view === 'teacher-general') {
+                if (userRole !== 'admin') {
+                    document.getElementById('paymentModal').style.display = 'block';
+                    switchView('class-general'); // Revert to a free view
+                    return;
+                }
+                document.getElementById('teacher-selector').value = "";
+                filterSingleView('teacher', '');
+            } else if (view === 'daily') {
+                document.getElementById('daily-view').style.display = 'block';
+                handleDaySelection(document.getElementById('day-selector').value);
+            }
+        }
+        
+        function filterSingleView(type, value) {
+            document.querySelectorAll('.view-container').forEach(c => c.style.display = 'none');
+            const generalViewId = (type === 'class') ? 'class-general-view' : 'teacher-general-view';
+            const singleViewId = (type === 'class') ? 'single-class-view' : 'single-teacher-view';
+            
+            document.querySelectorAll('#view-controls .icon-btn').forEach(b => b.classList.remove('active-view-btn'));
+            const btn = document.querySelector(`.icon-btn[data-view='${generalViewId.replace('-view','')}']`);
+            if(btn) btn.classList.add('active-view-btn');
+
+            if (value === "") {
+                document.getElementById(generalViewId).style.display = 'block';
+                if(type === 'class') renderGeneralClassView();
+                else renderGeneralTeacherView();
+            } else {
+                 if (userRole !== 'admin') {
+                    document.getElementById('paymentModal').style.display = 'block';
+                    if (type === 'class') document.getElementById('class-selector').value = "";
+                    else document.getElementById('teacher-selector').value = "";
+                    document.getElementById(generalViewId).style.display = 'block'; // Show general view again
+                    return;
+                }
+                document.getElementById(singleViewId).style.display = 'block';
+                if (type === 'class') {
+                    renderSingleClassView(value);
+                } else {
+                    renderSingleTeacherView(value);
+                }
+            }
+        }
+
+
+        function createTableHeader(table, headerTexts) {
+            table.tHead.innerHTML = '';
+            const { days, periodsCount, breakAfterPeriod, showBreak, showTime, startTime, periodDuration } = scheduleSettings;
+            let currentTime = new Date(`1970-01-01T${startTime}`);
+            const columnsPerDay = periodsCount + (showBreak && breakAfterPeriod > 0 && breakAfterPeriod < periodsCount ? 1 : 0);
+
+            const headerRow1 = table.tHead.insertRow(); 
+            headerRow1.insertCell().textContent = headerTexts.main;
+            days.forEach((day, dayIndex) => {
+                const th = headerRow1.insertCell(); th.textContent = day;
+                th.colSpan = columnsPerDay;
+                if (dayIndex > 0) th.classList.add('day-divider');
+            });
+            
+            const headerRow2 = table.tHead.insertRow(); 
+            headerRow2.insertCell().textContent = headerTexts.sub;
+            days.forEach((day, dayIndex) => {
+                let firstCellInDay = true;
+                for (let i = 1; i <= periodsCount; i++) {
+                    if (showBreak && i === breakAfterPeriod + 1) {
+                        const breakCell = headerRow2.insertCell(); breakCell.textContent = 'فسحة';
+                        if (dayIndex > 0 && firstCellInDay) { breakCell.classList.add('day-divider'); firstCellInDay = false; }
+                    }
+                    const periodCell = headerRow2.insertCell(); periodCell.textContent = i;
+                    if (dayIndex > 0 && firstCellInDay) { periodCell.classList.add('day-divider'); firstCellInDay = false; }
+                }
+            });
+
+            if (showTime) {
+                const headerRow3 = table.tHead.insertRow(); 
+                headerRow3.insertCell().textContent = 'الوقت';
+                days.forEach((day, dayIndex) => {
+                    currentTime = new Date(`1970-01-01T${startTime}`);
+                    let firstCellInDay = true;
+                    for (let i = 1; i <= periodsCount; i++) {
+                        if (showBreak && i === breakAfterPeriod + 1) {
+                             const breakCell = headerRow3.insertCell(); breakCell.textContent = '';
+                             if (dayIndex > 0 && firstCellInDay) { breakCell.classList.add('day-divider'); firstCellInDay = false; }
+                        }
+                        const timeCell = headerRow3.insertCell();
+                        const startTimeStr = currentTime.toTimeString().substring(0, 5);
+                        currentTime.setMinutes(currentTime.getMinutes() + periodDuration);
+                        const endTimeStr = currentTime.toTimeString().substring(0, 5);
+                        timeCell.textContent = `${startTimeStr}-${endTimeStr}`;
+                        if (dayIndex > 0 && firstCellInDay) { timeCell.classList.add('day-divider'); firstCellInDay = false; }
+                    }
+                });
+            }
+        }
+        
+        function populateSelectors() {
+            const classSelector = document.getElementById('class-selector'); 
+            classSelector.innerHTML = '<option value="">اختر فصل...</option>';
+            allClasses.forEach(c => classSelector.innerHTML += `<option value="${c}">${c}</option>`);
+            
+            const teacherSelector = document.getElementById('teacher-selector'); 
+            teacherSelector.innerHTML = '<option value="">اختر معلم...</option>';
+            const teachersToRender = userRole === 'admin' ? allTeachers : allTeachers.slice(0, 1);
+            teachersToRender.forEach(t => teacherSelector.innerHTML += `<option value="${t.name}">${t.name}</option>`);
+
+            const daySelector = document.getElementById('day-selector'); 
+            daySelector.innerHTML = '';
+            const daysToRender = userRole === 'admin' ? scheduleSettings.days : (scheduleSettings.days ? scheduleSettings.days.slice(0, 1) : []);
+            daysToRender.forEach(d => daySelector.innerHTML += `<option value="${d}">${d}</option>`);
+        }
+        
+        function renderGeneralClassView() {
+    const table = document.querySelector("#scheduleTable"); const body = table.tBodies[0]; createTableHeader(table, { main: 'الفصل/اليوم', sub: 'الحصة' }); body.innerHTML = "";
+    
+    const classesToRender = allClasses; // Show all classes for all users in general view
+
+    if (classesToRender.length === 0) { const row = body.insertRow(); row.insertCell().colSpan = (scheduleSettings.periodsCount * scheduleSettings.days.length) + 1; row.cells[0].textContent = "لا توجد فصول."; } 
+    else { classesToRender.forEach(className => {
+            const row = body.insertRow(); 
+            
+            // ▼▼▼ هذا هو السطر الوحيد الذي تمت إضافته ▼▼▼
+            row.classList.add('page-break-before');
+
+            row.dataset.class = className; row.insertCell().textContent = className;
+            scheduleSettings.days.forEach((day, dayIndex) => {
+                const firstCellIndexForDay = row.cells.length;
+                for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+                    if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
+                        const breakCell = row.insertCell(); breakCell.style.backgroundColor = '#ddd';
+                    }
+                    const cell = row.insertCell(); cell.dataset.class = className; cell.dataset.day = day; cell.dataset.period = i;
+                    cell.ondrop = drop; cell.ondragover = allowDrop; cell.ondragenter = dragEnter; cell.ondragleave = dragLeave;
+                }
+                if (dayIndex > 0) {
+                    row.cells[firstCellIndexForDay].classList.add('day-divider');
+                }
+            });
+        });
+    }
+    reapplyPlacements();
+}
+        
+        function renderGeneralTeacherView() {
+    const teacherTable = document.querySelector("#teacherScheduleTable"); const body = teacherTable.tBodies[0]; createTableHeader(teacherTable, { main: 'المعلم/اليوم', sub: 'الحصة' }); body.innerHTML = "";
+    const teachersToRender = userRole === 'admin' ? allTeachers : allTeachers.slice(0, 1);
+
+    teachersToRender.forEach(teacher => {
+        const row = body.insertRow(); 
+
+        // ▼▼▼ هذا هو السطر الوحيد الذي تمت إضافته ▼▼▼
+        row.classList.add('page-break-before');
+
+        row.dataset.teacher = teacher.name; row.insertCell().textContent = teacher.name;
+        scheduleSettings.days.forEach((day, dayIndex) => { 
+            const firstCellIndexForDay = row.cells.length;
+            for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
+                if (scheduleSettings.showBreak && p === scheduleSettings.breakAfterPeriod + 1) row.insertCell().style.backgroundColor = '#ddd';
+                const cell = row.insertCell(); cell.dataset.teacher = teacher.name; cell.dataset.day = day; cell.dataset.period = p; 
+            }
+            if (dayIndex > 0) {
+                row.cells[firstCellIndexForDay].classList.add('day-divider');
+            }
+        });
+    });
+    reapplyPlacementsToTeacherView();
+}
+
+        function reapplyPlacementsToTeacherView() {
+             document.querySelectorAll('#teacherScheduleTable td .card, #teacherScheduleTable td .text-display').forEach(c => c.remove());
+             Object.entries(placements).forEach(([cardId, placement]) => {
+                const cardData = cards.find(c => c.id === cardId); if (!cardData) return;
+                const quota = quotas.find(q => q.id == cardData.quotaId); if (!quota) return;
+                quota.teacherNames.forEach(teacherName => {
+                    const teacherCell = document.querySelector(`#teacherScheduleTable td[data-teacher="${teacherName}"][data-day="${placement.day}"][data-period="${placement.period}"]`);
+                    if(teacherCell && teacherCell.childElementCount === 0) { 
+                        const cloneCard = createCardElement(cardData); cloneCard.draggable = false; 
+                        cloneCard.innerHTML = `${quota.subject}<br><b>(${quota.classNames.join(', ')})</b>`; 
+                        teacherCell.appendChild(cloneCard); 
+                        const textElement = document.createElement('div'); textElement.className = 'text-display';
+                        textElement.innerHTML = cloneCard.innerHTML; textElement.style.backgroundColor = cardData.color;
+                        teacherCell.appendChild(textElement);
+                    }
+                });
+             });
+        }
+        
+        function handleDaySelection(selectedDay) {
+            if (userRole !== 'admin' && selectedDay !== (scheduleSettings.days ? scheduleSettings.days[0] : '')) {
+                document.getElementById('paymentModal').style.display = 'block';
+                document.getElementById('day-selector').value = scheduleSettings.days[0];
+                return;
+            }
+            renderDailyView(selectedDay);
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+        }
+
+        function renderDailyView(day) {
+            if (!day) return;
+            const container = document.getElementById('daily-view').querySelector('.main-schedule-container');
+            container.innerHTML = '';
+            const table = document.createElement('table');
+            table.id = 'dailyScheduleTable';
+            const body = table.createTBody(); const head = table.createTHead();
+            
+            const headerRow = head.insertRow(); headerRow.innerHTML = '<th>الفصل</th>';
+            for (let i = 1; i <= scheduleSettings.periodsCount; i++) { 
+                if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) headerRow.innerHTML += `<th>فسحة</th>`;
+                headerRow.innerHTML += `<th>الحصة ${i}</th>`;
+            }
+
+            const classesToRender = allClasses; // Show all classes for all users in daily view as well
+
+            classesToRender.forEach(className => {
+                const row = body.insertRow(); row.insertCell().textContent = className;
+                for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
+                    if (scheduleSettings.showBreak && p === scheduleSettings.breakAfterPeriod + 1) row.insertCell().style.backgroundColor = '#ddd';
+                    const cell = row.insertCell();
+                    const sourceCell = document.querySelector(`#scheduleTable td[data-class="${className}"][data-day="${day}"][data-period="${p}"]`);
+                    if (sourceCell && sourceCell.childElementCount > 0) {
+                        const cardEl = sourceCell.children[0];
+                        const cardData = cards.find(c => c.id === cardEl.id);
+                        if (cardData) {
+                            const newCardEl = createCardElement(cardData); newCardEl.draggable = false;
+                            cell.appendChild(newCardEl);
+                            const textElement = document.createElement('div'); textElement.className = 'text-display';
+                            textElement.innerHTML = cardData.content; textElement.style.backgroundColor = cardData.color;
+                            cell.appendChild(textElement);
+                        }
+                    }
+                }
+            });
+            container.appendChild(table);
+        }
+     function renderSingleClassView(className) {
+    const container = document.getElementById('single-class-view').querySelector('.main-schedule-container');
+    container.innerHTML = '';
+    const printHeader = document.getElementById('single-class-view').querySelector('.schedule-print-header');
+    printHeader.innerHTML = `<h3>جدول فصل: ${className}</h3><p>${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}</p>`;
+
+    const table = document.createElement('table');
+    table.id = 'singleClassScheduleTable';
+    const head = table.createTHead();
+    const body = table.createTBody();
+
+    const headerRow = head.insertRow();
+    headerRow.insertCell().textContent = 'اليوم';
+    for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+        if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
+            headerRow.insertCell().textContent = 'فسحة';
+        }
+        headerRow.insertCell().textContent = `الحصة ${i}`;
+    }
+
+    scheduleSettings.days.forEach(day => {
+        const row = body.insertRow();
+        row.insertCell().textContent = day;
+        for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
+            if (scheduleSettings.showBreak && period === scheduleSettings.breakAfterPeriod + 1) {
+                row.insertCell().style.backgroundColor = '#ddd';
+            }
+            const cell = row.insertCell();
+            const placementKey = Object.keys(placements).find(cardId => {
+                const p = placements[cardId];
+                const card = cards.find(c => c.id === cardId);
+                return card && card.classNames.includes(className) && p.day === day && p.period == period;
+            });
+
+            if (placementKey) {
+                const cardData = cards.find(c => c.id === placementKey);
+                // ▼▼▼ هذا هو الجزء المصحح ▼▼▼
+                const quota = quotas.find(q => q.id === cardData.quotaId);
+                if (cardData && quota) {
+                    const cardEl = createCardElement(cardData);
+                    // نقرأ البيانات من "quota" وليس "cardData"
+                    cardEl.innerHTML = `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small>`;
+                    cardEl.draggable = false;
+                    cell.appendChild(cardEl);
+
+                    const textElement = document.createElement('div');
+                    textElement.className = 'text-display';
+                    textElement.innerHTML = cardEl.innerHTML;
+                    textElement.style.backgroundColor = cardData.color;
+                    cell.appendChild(textElement);
+                }
+            }
+        }
+    });
+    container.appendChild(table);
+}
+
+function renderSingleTeacherView(teacherName) {
+    const container = document.getElementById('single-teacher-view').querySelector('.main-schedule-container');
+    container.innerHTML = '';
+    const printHeader = document.getElementById('single-teacher-view').querySelector('.schedule-print-header');
+    printHeader.innerHTML = `<h3>جدول المعلم: ${teacherName}</h3><p>${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}</p>`;
+
+    const table = document.createElement('table');
+    table.id = 'singleTeacherScheduleTable';
+    const head = table.createTHead();
+    const body = table.createTBody();
+
+    const headerRow = head.insertRow();
+    headerRow.insertCell().textContent = 'اليوم';
+    for (let i = 1; i <= scheduleSettings.periodsCount; i++) {
+        if (scheduleSettings.showBreak && i === scheduleSettings.breakAfterPeriod + 1) {
+            headerRow.insertCell().textContent = 'فسحة';
+        }
+        headerRow.insertCell().textContent = `الحصة ${i}`;
+    }
+
+    scheduleSettings.days.forEach(day => {
+        const row = body.insertRow();
+        row.insertCell().textContent = day;
+        for (let period = 1; period <= scheduleSettings.periodsCount; period++) {
+            if (scheduleSettings.showBreak && period === scheduleSettings.breakAfterPeriod + 1) {
+                row.insertCell().style.backgroundColor = '#ddd';
+            }
+            const cell = row.insertCell();
+            const placementKey = Object.keys(placements).find(cardId => {
+                const p = placements[cardId];
+                const card = cards.find(c => c.id === cardId);
+                const quota = card ? quotas.find(q => q.id === card.quotaId) : null;
+                return quota && quota.teacherNames.includes(teacherName) && p.day === day && p.period == period;
+            });
+            
+            if (placementKey) {
+                const cardData = cards.find(c => c.id === placementKey);
+                 // ▼▼▼ هذا هو الجزء المصحح ▼▼▼
+                const quota = quotas.find(q => q.id === cardData.quotaId);
+                if (cardData && quota) {
+                    const cardEl = createCardElement(cardData);
+                    // نقرأ البيانات من "quota" وليس "cardData"
+                    cardEl.innerHTML = `${quota.subject}<br><small>${quota.teacherNames.join(' و ')}</small><br><b>(${quota.classNames.join(', ')})</b>`;
+                    cardEl.draggable = false;
+                    cell.appendChild(cardEl);
+
+                    const textElement = document.createElement('div');
+                    textElement.className = 'text-display';
+                    textElement.innerHTML = cardEl.innerHTML;
+                    textElement.style.backgroundColor = cardData.color;
+                    cell.appendChild(textElement);
+                }
+            }
+        }
+    });
+
+    container.appendChild(table);
+}
+
+        async function resetSchedule() {
+            placements = {}; 
+            await savePlacements(); 
+            renderAllListsAndTables();
+            const activeViewButton = document.querySelector('#view-controls .active-view-btn');
+            if (activeViewButton) {
+                switchView(activeViewButton.dataset.view);
+            }
+        }
+
+        async function distributeRandomly() {
+            await resetSchedule();
+            generateCards();
+            let assignableCards = [...cards];
+            for (let i = assignableCards.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [assignableCards[i], assignableCards[j]] = [assignableCards[j], assignableCards[i]]; }
+            const teacherSchedule = new Map(); allTeachers.forEach(t => teacherSchedule.set(t.name, new Set()));
+            const classSchedule = new Map(); [...new Set(quotas.flatMap(q => q.classNames))].forEach(c => classSchedule.set(c, new Set()));
+
+            assignableCards.forEach(cardToPlace => {
+                const quota = quotas.find(q => q.id === cardToPlace.quotaId); if (!quota) return;
+                let possibleSlots = [];
+                scheduleSettings.days.forEach(day => { for (let period = 1; period <= scheduleSettings.periodsCount; period++) { possibleSlots.push({ day, period }); } });
+                
+                for (const slot of possibleSlots) {
+                    const slotId = `${slot.day}-${slot.period}`;
+                    let isTeacherBusy = quota.teacherNames.some(name => {
+                        const teacher = allTeachers.find(t => t.name === name);
+                        const availability = teacher?.availability || {};
+                        return teacherSchedule.get(name)?.has(slotId) || availability[slotId] === 'unavailable';
+                    });
+                    let isClassBusy = quota.classNames.some(className => classSchedule.get(className)?.has(slotId));
+
+                    if (!isTeacherBusy && !isClassBusy) {
+                        placements[cardToPlace.id] = slot;
+                        quota.teacherNames.forEach(teacher => teacherSchedule.get(teacher).add(slotId));
+                        quota.classNames.forEach(className => classSchedule.get(className).add(slotId));
+                        return; 
+                    }
+                }
+            });
+            await savePlacements();
+            renderAllListsAndTables();
+            const activeViewButton = document.querySelector('#view-controls .active-view-btn');
+            if (activeViewButton) {
+                switchView(activeViewButton.dataset.view);
+            }
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); }
+        
+        function drag(ev) { 
+            draggedCardId = ev.target.id; 
+            ev.dataTransfer.setData("text", ev.target.id);
+            setTimeout(() => {
+                ev.target.classList.add('dragging');
+            }, 0);
+        }
+        
+        async function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(data) || document.querySelector('.dragging');
+            if(draggedElement) draggedElement.classList.remove('dragging');
+
+            clearAllHighlights();
+            let target = ev.target.closest('td, #unassigned-cards-container');
+            
+            if (target && draggedElement) {
+                const draggedCardId = draggedElement.id;
+                
+                if (target.id === 'unassigned-cards-container') {
+                    delete placements[draggedCardId];
+                } else {
+                    if (target.classList.contains('conflict-slot') || target.classList.contains('unavailable-slot')) {
+                        return;
+                    }
+                    const newPlacement = { day: target.dataset.day, period: target.dataset.period };
+                    const existingCardElement = target.querySelector('.card');
+                    const draggedCardOriginalPlacement = placements[draggedCardId];
+
+                    if (existingCardElement && existingCardElement.id !== draggedCardId) {
+                        const existingCardId = existingCardElement.id;
+                        placements[draggedCardId] = newPlacement;
+                        if (draggedCardOriginalPlacement) {
+                            placements[existingCardId] = draggedCardOriginalPlacement;
+                        } else {
+                            delete placements[existingCardId];
+                        }
+                    } else {
+                        placements[draggedCardId] = newPlacement;
+                    }
+                }
+                
+                await savePlacements(); 
+                renderAllListsAndTables();
+            }
+        }
+
+        function dragEnter(ev) {
+            ev.preventDefault();
+            let target = ev.target.closest('td'); if (!target) return;
+            const draggedCardData = cards.find(c => c.id === draggedCardId); if (!draggedCardData) return;
+            const quota = quotas.find(q => q.id === draggedCardData.quotaId); if (!quota) return;
+
+            if (target.dataset.class && !draggedCardData.classNames.includes(target.dataset.class)) { 
+                target.classList.add('unavailable-slot'); 
+                return; 
+            }
+            
+            const existingCardElement = target.querySelector('.card');
+            if (existingCardElement && existingCardElement.id === draggedCardId) {
+                return;
+            }
+
+            const { day, period } = target.dataset; let hasConflict = false;
+            for (const teacherName of quota.teacherNames) {
+                const teacher = allTeachers.find(t => t.name === teacherName);
+                if (teacher?.availability[`${day}-${period}`] === 'unavailable') { hasConflict = true; break; }
+            }
+
+            if (!hasConflict) {
+                 const allCellsAtSameTime = document.querySelectorAll(`#scheduleTable td[data-day='${day}'][data-period='${period}']`);
+                 for (const cell of allCellsAtSameTime) {
+                    const occupyingCardElement = cell.querySelector('.card');
+                    if (occupyingCardElement && occupyingCardElement.id !== draggedCardId) {
+                        const existingCardData = cards.find(c => c.id === occupyingCardElement.id);
+                        if(existingCardData) {
+                            const existingQuota = quotas.find(q => q.id === existingCardData.quotaId); 
+                            if (existingQuota && quota.teacherNames.some(t => existingQuota.teacherNames.includes(t))) { 
+                                hasConflict = true; 
+                                break; 
+                            }
+                        }
+                    }
+                }
+            }
+            target.classList.add(hasConflict ? 'conflict-slot' : 'available-slot');
+        }
+
+        function dragLeave(ev) { let target = ev.target.closest('td'); if (target) { target.classList.remove('available-slot', 'unavailable-slot', 'conflict-slot'); } }
+        function clearAllHighlights() { document.querySelectorAll('.available-slot, .unavailable-slot, .conflict-slot').forEach(el => { el.classList.remove('available-slot', 'unavailable-slot', 'conflict-slot'); }); }
+        
+        function findActiveTable() {
+            const visibleContainer = [...document.querySelectorAll('.view-container')].find(c => c.style.display === 'block');
+            return visibleContainer ? visibleContainer.querySelector('table') : null;
+        }
+
+        function exportActiveTable(format) {
+            if (userRole !== 'admin') { 
+                document.getElementById('paymentModal').style.display = 'block';
+                return;
+            }
+            const table = findActiveTable();
+            if(!table) { alert('لا يوجد جدول ظاهر لتصديره.'); return; }
+            const header = `${scheduleSettings.schoolName} - ${scheduleSettings.academicYear}`;
+            const activeViewButton = document.querySelector('#view-controls .active-view-btn');
+            const filename = `${activeViewButton ? activeViewButton.title : 'جدول'}.`
+
+            if (format === 'excel') exportToExcel(table, header, filename + 'xlsx');
+            if (format === 'word') exportToWord(table, header, filename + 'doc');
+            if (format === 'pdf') exportToPDF(table, header, filename + 'pdf');
+        }
+
+        function exportToExcel(table, header, filename) {
+            const wb = XLSX.utils.book_new();
+            const tableData = [];
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                const rowData = [];
+                const cells = row.querySelectorAll('th, td');
+                cells.forEach(cell => {
+                    const content = cell.querySelector('.card')?.innerText.replace(/\n/g, ' ') || cell.innerText.replace(/\n/g, ' ');
+                    rowData.push(content.trim());
+                });
+                tableData.push(rowData);
+            });
+            
+            const ws = XLSX.utils.aoa_to_sheet([ [header] ]);
+            XLSX.utils.sheet_add_aoa(ws, tableData, {origin: 'A2'});
+            if(!ws['!view']) ws['!view'] = {};
+            ws['!view'].RTL = true;
+            XLSX.utils.book_append_sheet(wb, ws, "الجدول");
+            XLSX.writeFile(wb, filename);
+        }
+
+        function exportToWord(table, header, filename) {
+            let html = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>Export</title></head>
+                <body dir="rtl">
+                    <div style="text-align:center;"><h3>${header}</h3></div>
+                    ${table.outerHTML}
+                </body>
+                </html>`;
+            
+            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportToPDF(table, header, filename) {
+            alert('تصدير PDF قيد التطوير حالياً لدعم اللغة العربية بشكل كامل.');
+        }
+
+        function printSchedule() {
+    if (userRole !== 'admin') {
+        alert('ليس لديك صلاحية الطباعة.');
+        return;
+    }
+    
+    // 1. تعبئة بيانات الرأس والتذييل
+    const activeView = document.querySelector('.view-container[style*="display: block"]');
+    let title = "الجدول العام للفصول"; // عنوان افتراضي
+    if (activeView.id === 'single-class-view') {
+        title = `جدول فصل: ${document.getElementById('class-selector').value}`;
+    } else if (activeView.id === 'single-teacher-view') {
+        title = `جدول المعلم: ${document.getElementById('teacher-selector').value}`;
+    } else if (activeView.id === 'daily-view') {
+         title = `الجدول اليومي ليوم: ${document.getElementById('day-selector').value}`;
+    }
+    
+    document.getElementById('print-school-name').textContent = scheduleSettings.schoolName || 'اسم المدرسة';
+    document.getElementById('print-title').textContent = title;
+    document.getElementById('print-scheduler-name').textContent = scheduleSettings.schedulerName || '';
+
+    // 2. تطبيق إعدادات الطباعة بدون ألوان
+    const isBw = document.getElementById('printBwCheckbox').checked;
+    if (isBw) { document.body.classList.add('print-bw'); }
+    
+    // 3. استدعاء الطباعة
+    window.print();
+    
+    // 4. إعادة الوضع الطبيعي بعد الطباعة
+    setTimeout(() => { if (isBw) { document.body.classList.remove('print-bw'); } }, 500);
+}
+
+        function toggleSection(headerElement) {
+            const content = headerElement.nextElementSibling;
+            const icon = headerElement.querySelector('.toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = '';
+                icon.textContent = '-';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '+';
+            }
+        }
+        function renderTeacherStats() {
+            const statsContainer = document.getElementById('teacher-stats');
+            if (!statsContainer) return;
+
+            const stats = {};
+            allTeachers.forEach(t => stats[t.name] = 0);
+
+            quotas.forEach(q => {
+                const periodsPerClass = q.weeklyPeriods;
+                const numClasses = q.classNames.length;
+                q.teacherNames.forEach(name => {
+                    if (stats.hasOwnProperty(name)) {
+                        stats[name] += periodsPerClass * numClasses;
+                    }
+                });
+            });
+
+            let html = '<h4>إجمالي الأنصبة لكل معلم:</h4><ul>';
+            for (const teacher in stats) {
+                html += `<li><strong>${teacher}:</strong> ${stats[teacher]} حصة</li>`;
+            }
+            html += '</ul>';
+            statsContainer.innerHTML = html;
+        }
+        
+        // --- Event listeners Setup ---
+        // استبدل الوظيفة القديمة بهذه النسخة المحسّنة
+auth.onAuthStateChanged(async user => {
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+
+    if (user) {
+        try {
+            currentUser = user;
+            document.getElementById('user-email').textContent = user.email;
+
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (userDoc.exists) {
+                userRole = userDoc.data().role || 'user';
+            }
+            
+            // سنستدعي الوظائف التي تحتوي على console.log
+            await loadUserData();
+            
+            console.log("About to initialize settings form...");
+            initializeSettingsForm();
+            
+            console.log("About to update settings and render tables...");
+            updateSettings(true); 
+            console.log("Finished rendering everything successfully!");
+
+            authContainer.style.display = 'none';
+            appContainer.style.display = 'block';
+
+            const exportControls = document.querySelector('.export-options');
+            if (exportControls) {
+                exportControls.style.display = userRole === 'admin' ? 'flex' : 'none';
+            }
+        } catch (error) {
+            // هذا السطر سيظهر أي خطأ خفي ويخبرنا بالسبب
+            console.error("AN ERROR OCCURRED! The problem is here:", error);
+        }
+
+    } else {
+        currentUser = null;
+        userRole = 'user';
+        authContainer.style.display = 'block';
+        appContainer.style.display = 'none';
+    }
+});
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        document.getElementById('signup-form').addEventListener('submit', handleSignup);
+        document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+        document.getElementById('addClassForm').addEventListener('submit', addOrUpdateClass);
+        document.getElementById('addSubjectForm').addEventListener('submit', addOrUpdateSubject);
+        document.getElementById('addTeacherForm').addEventListener('submit', addTeacher);
+        
+        document.getElementById('updateSettingsBtn').addEventListener('click', () => updateSettings(true));
+        document.getElementById('cancelClassEditBtn').addEventListener('click', resetClassForm);
+        document.getElementById('cancelSubjectEditBtn').addEventListener('click', resetSubjectForm);
+        document.getElementById('addQuotaBtn').addEventListener('click', addOrUpdateQuota);
+        document.getElementById('toggleCoTeacherBtn').addEventListener('click', toggleCoTeacher);
+        document.getElementById('cancelEditBtn').addEventListener('click', resetQuotaForm);
+        document.getElementById('distributeRandomlyBtn').addEventListener('click', distributeRandomly);
+        document.getElementById('resetScheduleBtn').addEventListener('click', resetSchedule);
+        document.getElementById('printBtn').addEventListener('click', printSchedule);
+        document.getElementById('pdfBtn').addEventListener('click', () => exportActiveTable('pdf'));
+        document.getElementById('excelBtn').addEventListener('click', () => exportActiveTable('excel'));
+        document.getElementById('wordBtn').addEventListener('click', () => exportActiveTable('word'));
+        document.getElementById('saveTeacherChangesBtn').addEventListener('click', saveTeacherChanges);
+        document.getElementById('confirmCopyQuotaBtn').addEventListener('click', confirmCopyQuota);
+        document.getElementById('toggleColorsBtn').addEventListener('click', () => {
+            document.body.classList.toggle('colors-off');
+        });
+
+        document.querySelectorAll('.auth-toggle').forEach(el => el.addEventListener('click', () => toggleAuthView(el.parentElement.id === 'signup-view')));
+        document.querySelectorAll('.modal-close-btn').forEach(el => {
+            el.addEventListener('click', () => {
+                el.closest('.modal').style.display = 'none';
+            });
+        });
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => switchView(e.currentTarget.dataset.view));
+        });
+        document.getElementById('class-selector').addEventListener('change', (e) => filterSingleView('class', e.target.value));
+        document.getElementById('teacher-selector').addEventListener('change', (e) => filterSingleView('teacher', e.target.value));
+        document.getElementById('day-selector').addEventListener('change', (e) => handleDaySelection(e.target.value));
+        document.getElementById('subject').addEventListener('change', filterTeachersBySubject);
+        document.addEventListener('dragend', () => {
+            document.querySelectorAll('.dragging').forEach(d => d.classList.remove('dragging'));
+        });
+
+        document.getElementById('fontSize').addEventListener('input', (e) => {
+            document.getElementById('fontSizeValue').textContent = e.target.value;
+            scheduleSettings.fontSize = parseInt(e.target.value, 10);
+            applyVisualSettings();
+            saveSettings();
+        });
+        document.getElementById('firstColumnWidth').addEventListener('input', (e) => {
+             scheduleSettings.firstColumnWidth = parseInt(e.target.value, 10);
+             applyVisualSettings();
+             saveSettings();
+        });
+        document.getElementById('dataColumnWidth').addEventListener('input', (e) => {
+            scheduleSettings.dataColumnWidth = parseInt(e.target.value, 10);
+            applyVisualSettings();
+            saveSettings();
+        });
+        document.getElementById('dataRowHeight').addEventListener('input', (e) => {
+            scheduleSettings.dataRowHeight = parseInt(e.target.value, 10);
+            applyVisualSettings();
+            saveSettings();
+        });
+
+        document.getElementById('toggleBreakBtn').addEventListener('click', () => {
+            scheduleSettings.showBreak = !scheduleSettings.showBreak;
+            applyVisualSettings();
+            renderAllListsAndTables();
+            saveSettings();
+        });
+        document.getElementById('toggleTimeBtn').addEventListener('click', () => {
+            scheduleSettings.showTime = !scheduleSettings.showTime;
+            applyVisualSettings();
+            renderAllListsAndTables();
+            saveSettings();
+        });
+        document.querySelectorAll('.display-style-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                scheduleSettings.displayStyle = e.currentTarget.dataset.style;
+                applyVisualSettings();
+                renderAllListsAndTables();
+                saveSettings();
+            });
+        });
+       // =========================================================================
+// --- القسم النهائي والمضبوط للطباعة والتصدير ---
+// =========================================================================
+
+/**
+ * دالة ذكية تحدد أي حاوية جدول هي المعروضة حاليًا
+ */
+function getActiveViewContainer() {
+    return document.querySelector('.view-container[style*="display: block"]');
+}
+
+/**
+ * الوظيفة الرئيسية لزر الطباعة (تطبع العرض الحالي)
+ */
+function printActiveTable() {
+    const activeContainer = getActiveViewContainer();
+    if (!activeContainer) {
+        alert('لا يوجد جدول معروض لطباعته.');
+        return;
+    }
+    
+    // إضافة كلاس مؤقت للحاوية الأب ليتم طباعتها
+    const appContainer = document.getElementById('app-container');
+    appContainer.classList.add('printable-area');
+    
+    const isBw = document.getElementById('printBwCheckbox').checked;
+    if (isBw) document.body.classList.add('print-bw');
+
+    window.print();
+
+    // إزالة الكلاسات بعد الطباعة ليعود الوضع طبيعيًا
+    appContainer.classList.remove('printable-area');
+    if (isBw) document.body.classList.remove('print-bw');
+}
+
+/**
+ * وظيفة تصدير العرض الحالي كملف PDF (باستخدام لقطة شاشة html2canvas)
+ */
+async function exportViewToPDF(viewId, filename) {
+    const targetContainer = document.getElementById(viewId);
+    if (!targetContainer) {
+        alert('لم يتم العثور على العرض المطلوب.');
+        return;
+    }
+
+    const table = targetContainer.querySelector('table');
+    const headerText = targetContainer.querySelector('.schedule-print-header').innerText;
+
+    const canvas = await html2canvas(table, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+    pdf.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    pdf.setFont('Amiri');
+    
+    pdf.setFontSize(18);
+    pdf.text(headerText, pdf.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+    
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth() - 40;
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    
+    pdf.addImage(imgData, 'PNG', 20, 60, pdfWidth, pdfHeight);
+    pdf.save(filename);
+}
+
+/**
+ * [جديد ومصحح] وظيفة احترافية لتصدير جداول كل المعلمين (4 في كل صفحة)
+ */
+async function exportAllTeachersPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    doc.setFont('Amiri');
+
+    const teachers = allTeachers;
+    const teachersPerPage = 4;
+    const pageMargin = 40;
+    const pageWidth = doc.internal.pageSize.getWidth() - (pageMargin * 2);
+    const pageHeight = doc.internal.pageSize.getHeight() - (pageMargin * 2);
+    const boxWidth = pageWidth / 2;
+    const boxHeight = pageHeight / 2;
+
+    for (let i = 0; i < teachers.length; i++) {
+        const pageIndex = Math.floor(i / teachersPerPage);
+        const indexOnPage = i % teachersPerPage;
+
+        if (indexOnPage === 0 && pageIndex > 0) doc.addPage();
+        
+        const teacher = teachers[i];
+        
+        const head = [['اليوم', ...Array.from({ length: scheduleSettings.periodsCount }, (_, k) => `ح${k + 1}`)]];
+        const body = scheduleSettings.days.map(day => {
+            const row = [day];
+            for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
+                const placementKey = Object.keys(placements).find(cardId => {
+                    const pl = placements[cardId];
+                    const card = cards.find(c => c.id === cardId);
+                    const quota = card ? quotas.find(q => q.id === card.quotaId) : null;
+                    return quota && quota.teacherNames.includes(teacher.name) && pl.day === day && pl.period == p;
+                });
+                if (placementKey) {
+                    const card = cards.find(c => c.id === placementKey);
+                    const quota = quotas.find(q => q.id === card.quotaId);
+                    row.push(quota ? `${quota.subject}\n(${quota.classNames.join(',')})` : '');
+                } else {
+                    row.push('');
+                }
+            }
+            return row;
+        });
+
+        const xPos = pageMargin + (indexOnPage % 2 === 0 ? 0 : boxWidth);
+        const yPos = pageMargin + (indexOnPage < 2 ? 0 : boxHeight);
+
+        doc.setFontSize(10);
+        doc.text(`جدول المعلم: ${teacher.name}`, xPos, yPos + 15);
+        
+        doc.autoTable({
+            head: head, body: body, startY: yPos + 20, margin: { left: xPos },
+            tableWidth: boxWidth - 10,
+            styles: { font: 'Amiri', fontSize: 6, cellPadding: 1, halign: 'center' },
+            headStyles: { fillColor: [44, 62, 80] },
+        });
+    }
+    doc.save('جداول_كل_المعلمين.pdf');
+}
+
+/**
+ * [جديد ومصحح] وظيفة احترافية لتصدير الجدول اليومي الكامل (كل يوم في صفحة)
+ */
+async function exportAllDaysPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    doc.setFont('Amiri');
+        
+    for (let i = 0; i < scheduleSettings.days.length; i++) {
+        const day = scheduleSettings.days[i];
+        if (i > 0) doc.addPage();
+
+        doc.setFontSize(16);
+        doc.text(`الجدول اليومي - ${day}`, doc.internal.pageSize.getWidth() / 2, 40, { align: 'center' });
+
+        const head = [['الفصل', ...Array.from({ length: scheduleSettings.periodsCount }, (_, k) => `الحصة ${k + 1}`)]];
+        const body = allClasses.map(className => {
+            const row = [className];
+            for (let p = 1; p <= scheduleSettings.periodsCount; p++) {
+                const placementKey = Object.keys(placements).find(cardId => {
+                    const pl = placements[cardId];
+                    const card = cards.find(c => c.id === cardId);
+                    return card && card.classNames.includes(className) && pl.day === day && pl.period == p;
+                });
+                if (placementKey) {
+                    const card = cards.find(c => c.id === placementKey);
+                    const quota = quotas.find(q => q.id === card.quotaId);
+                    row.push(quota ? `${quota.subject}\n(${quota.teacherNames.join(',')})` : '');
+                } else {
+                    row.push('');
+                }
+            }
+            return row;
+        });
+        
+        doc.autoTable({
+            head: head, body: body, startY: 60,
+            styles: { font: 'Amiri', halign: 'center', fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [44, 62, 80] },
+        });
+    }
+    doc.save('الجدول_اليومي_الكامل.pdf');
+}
+
+
+/**
+ * الدالة العامة التي تستدعي الوظيفة المناسبة حسب الصيغة
+ */
+function exportActiveTable(format) {
+    if (userRole !== 'admin') { 
+        document.getElementById('paymentModal').style.display = 'block';
+        return;
+    }
+    const activeContainer = getActiveViewContainer();
+    if(!activeContainer) { alert('لا يوجد جدول ظاهر لتصديره.'); return; }
+
+    const table = activeContainer.querySelector('table');
+    const header = activeContainer.querySelector('.schedule-print-header').innerText;
+    const filenameBase = activeContainer.querySelector('h3')?.innerText || 'جدول';
+
+    if (format === 'excel') exportToExcel(table, header, `${filenameBase}.xlsx`);
+    if (format === 'word') exportToWord(table, header, `${filenameBase}.doc`);
+    if (format === 'pdf') exportViewToPDF(activeContainer.id, `${filenameBase}.pdf`);
+}
+
+// --- ربط كل زر بالوظيفة الصحيحة والدقيقة له ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('printBtn')?.addEventListener('click', printActiveTable);
+    
+    // الأزرار المتخصصة تستدعي الدوال الاحترافية الجديدة
+    document.getElementById('exportTeachersBtn')?.addEventListener('click', exportAllTeachersPDF);
+    document.getElementById('exportDailyBtn')?.addEventListener('click', exportAllDaysPDF);
+    
+    // الأزرار العامة تستدعي الدالة التي تصدر العرض الحالي فقط
+    document.getElementById('excelBtn')?.addEventListener('click', () => exportActiveTable('excel'));
+    document.getElementById('wordBtn')?.addEventListener('click', () => exportActiveTable('word'));
+    document.getElementById('pdfBtn')?.addEventListener('click', () => exportActiveTable('pdf'));
+});
     </script>
-  </body>
+
+</body>
 </html>
